@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,28 @@ export default function LoginPage() {
 
   const api = useapi();
   const router = useRouter();
+
+  useEffect(() => {
+    let header = document.getElementById("main-header");
+    let sidebar = document.getElementById("main-sidebar");
+    if (header) {
+      header.style.display = "none";
+    }
+    if (sidebar) {
+      sidebar.style.display = "none";
+    }
+
+    return () => {
+      let header = document.getElementById("main-header");
+      let sidebar = document.getElementById("main-sidebar");
+      if (header) {
+        header.style.display = "block";
+      }
+      if (sidebar) {
+        sidebar.style.display = "block";
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

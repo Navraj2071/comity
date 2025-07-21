@@ -30,17 +30,15 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { clearCurrentUser } from "@/lib/storage";
 import { useRouter } from "next/navigation";
+import useStore from "@/lib/store/useStore";
 
 interface HeaderProps {
-  user?: {
-    name: string;
-    role: string;
-    department: string;
-  } | null;
   checkpoints?: any[];
 }
 
-export function Header({ checkpoints, user }: HeaderProps) {
+export function Header({ checkpoints }: HeaderProps) {
+  const store = useStore();
+  const user = store?.db?.user;
   const [searchTerm, setSearchTerm] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
@@ -63,7 +61,10 @@ export function Header({ checkpoints, user }: HeaderProps) {
 
   if (!user) {
     return (
-      <header className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10">
+      <header
+        className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10"
+        id="main-header"
+      >
         <div className="flex items-center justify-between">
           <div className="text-white">Loading...</div>
         </div>
@@ -72,7 +73,10 @@ export function Header({ checkpoints, user }: HeaderProps) {
   }
 
   return (
-    <header className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10">
+    <header
+      className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10"
+      id="main-header"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h2 className="text-sm font-medium text-white">

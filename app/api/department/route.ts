@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
-import User from "@/lib/models/user";
 import Department from "@/lib/models/department";
 import { getUser } from "@/lib/utilities";
 
@@ -17,16 +16,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const user = await getUser(accessToken);
+    await getUser(accessToken);
   } catch (e) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   await connectDB();
 
-  const allUsers = await User.find().select("-password -refreshToken");
+  const departments = await Department.find();
 
-  return NextResponse.json({ allUsers: allUsers });
+  return NextResponse.json({ departments });
 }
 
 export async function POST(request: Request) {
@@ -41,51 +40,38 @@ export async function POST(request: Request) {
   }
 
   try {
-    const user = await getUser(accessToken);
+    await getUser(accessToken);
   } catch (e) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   await connectDB();
-  const { email, password, name, role, department } = await request.json();
+  const { name, head, spoc } = await request.json();
 
-  if (!email || !password) {
+  if (!name || !head || !spoc) {
     return NextResponse.json(
-      { message: "Email and password are required" },
+      { message: "Name, Head and SPOC values are required." },
       { status: 400 }
     );
   }
 
   try {
-    const newUser = await User.create({
-      email,
-      password,
+    const newDepartment = await Department.create({
       name,
-      role,
-      department,
+      head,
+      spoc,
     });
-    const userWithoutPassword = newUser.toObject();
-    delete userWithoutPassword.password;
-
-    await Department.findOneAndUpdate(
-      { name: department },
-      { $inc: { userCount: 1 } }
-    );
 
     return NextResponse.json(
-      { message: "User registered successfully", user: userWithoutPassword },
+      { message: "Department created successfully", department: newDepartment },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Registration error:", error);
-    if (error.code == 11000) {
-      return NextResponse.json(
-        { message: "Email address already exists." },
-        { status: 409 }
-      );
-    }
+    console.log(Department);
+    console.error("Department create error:", error);
+
     return NextResponse.json(
-      { message: "User create error: ", error: error.message },
+      { message: "Department create error: ", error: error },
       { status: 500 }
     );
   }
@@ -112,33 +98,24 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { _id, password, email, refreshToken, ...updates } = body;
-    const user = await User.findByIdAndUpdate(
+
+    const { _id, userCount, activeCheckpoints, ...updates } = body;
+
+    const department = await Department.findByIdAndUpdate(
       _id,
       { $set: updates },
-      { new: false, runValidators: true }
-    ).select("-password -refreshToken");
-
-    if (updates.department && updates.department !== user.department) {
-      await Department.findOneAndUpdate(
-        { name: user.department },
-        { $inc: { userCount: -1 } }
-      );
-      await Department.findOneAndUpdate(
-        { name: updates.department },
-        { $inc: { userCount: 1 } }
-      );
-    }
-
-    return NextResponse.json(
-      { message: "User updated successfully" },
-      { status: 204 }
+      { new: true, runValidators: true }
     );
+
+    return NextResponse.json({
+      message: "Department updated successfully",
+      department,
+    });
   } catch (error: any) {
     console.error("Update error:", error);
 
     return NextResponse.json(
-      { message: "User update error: ", error: error },
+      { message: "Department update error: ", error: error },
       { status: 500 }
     );
   }
@@ -165,17 +142,13 @@ export async function DELETE(request: Request) {
 
   try {
     const { _id } = await request.json();
-    const user = await User.findByIdAndDelete(_id);
-    await Department.findOneAndUpdate(
-      { name: user.department },
-      { $inc: { userCount: -1 } }
-    );
-    return NextResponse.json({ message: "Account deleted successfully" });
+    const user = await Department.findByIdAndDelete(_id);
+    return NextResponse.json({ message: "Department deleted successfully" });
   } catch (error) {
-    console.error("Update error:", error);
+    console.error("Delete error:", error);
 
     return NextResponse.json(
-      { message: "User delete error: ", error: error },
+      { message: "Department delete error: ", error: error },
       { status: 500 }
     );
   }

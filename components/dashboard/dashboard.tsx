@@ -58,7 +58,8 @@ import {
 import useStore from "@/lib/store/useStore";
 
 export default function Dashboard() {
-  const { user } = useStore();
+  const store = useStore();
+  const user = store?.db?.user;
 
   const [checkpoints, setCheckpoints] = useState<any[]>([]);
   const [complianceStats, setComplianceStats] = useState<any>({});
@@ -226,463 +227,442 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={user} checkpoints={checkpoints} />
+    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6 animate-fadeIn flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">
+              Compliance Dashboard
+            </h1>
+            <p className="text-sm text-gray-400">
+              Monitor and manage regulatory compliance across all departments
+            </p>
+          </div>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-6 animate-fadeIn flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-white mb-1">
-                  Compliance Dashboard
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Monitor and manage regulatory compliance across all
-                  departments
-                </p>
-              </div>
+          {/* Dashboard Filters - Right aligned and less prominent */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center bg-gray-800 rounded-md border border-gray-700 p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`text-xs px-3 py-1 h-7 ${
+                  checkpointType === "ad-hoc"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                onClick={() => setCheckpointType("ad-hoc")}
+              >
+                Ad-hoc
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`text-xs px-3 py-1 h-7 ${
+                  checkpointType === "recurring"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                onClick={() => setCheckpointType("recurring")}
+              >
+                Recurring
+              </Button>
+            </div>
 
-              {/* Dashboard Filters - Right aligned and less prominent */}
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center bg-gray-800 rounded-md border border-gray-700 p-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`text-xs px-3 py-1 h-7 ${
-                      checkpointType === "ad-hoc"
-                        ? "bg-gray-700 text-white"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                    onClick={() => setCheckpointType("ad-hoc")}
-                  >
-                    Ad-hoc
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`text-xs px-3 py-1 h-7 ${
-                      checkpointType === "recurring"
-                        ? "bg-gray-700 text-white"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                    onClick={() => setCheckpointType("recurring")}
-                  >
-                    Recurring
-                  </Button>
-                </div>
+            {checkpointType === "ad-hoc" ? (
+              <Select value={financialYear} onValueChange={setFinancialYear}>
+                <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-44 text-xs">
+                  <SelectValue placeholder="Financial Year" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {financialYearsList.map((year) => (
+                    <SelectItem key={year} value={year} className="text-xs">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Select value={frequency} onValueChange={setFrequency}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
+                    <SelectValue placeholder="Frequency" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="monthly" className="text-xs">
+                      Monthly
+                    </SelectItem>
+                    <SelectItem value="quarterly" className="text-xs">
+                      Quarterly
+                    </SelectItem>
+                    <SelectItem value="half-yearly" className="text-xs">
+                      Half-Yearly
+                    </SelectItem>
+                    <SelectItem value="annually" className="text-xs">
+                      Annually
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
 
-                {checkpointType === "ad-hoc" ? (
-                  <Select
-                    value={financialYear}
-                    onValueChange={setFinancialYear}
-                  >
-                    <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-44 text-xs">
-                      <SelectValue placeholder="Financial Year" />
+                {frequency === "monthly" && (
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
+                      <SelectValue placeholder="Month" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      {financialYearsList.map((year) => (
-                        <SelectItem key={year} value={year} className="text-xs">
-                          {year}
+                      {monthsList.map((month) => (
+                        <SelectItem
+                          key={month.value}
+                          value={month.value}
+                          className="text-xs"
+                        >
+                          {month.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
-                        <SelectValue placeholder="Frequency" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
-                        <SelectItem value="monthly" className="text-xs">
-                          Monthly
-                        </SelectItem>
-                        <SelectItem value="quarterly" className="text-xs">
-                          Quarterly
-                        </SelectItem>
-                        <SelectItem value="half-yearly" className="text-xs">
-                          Half-Yearly
-                        </SelectItem>
-                        <SelectItem value="annually" className="text-xs">
-                          Annually
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                )}
 
-                    {frequency === "monthly" && (
-                      <Select value={period} onValueChange={setPeriod}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
-                          <SelectValue placeholder="Month" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          {monthsList.map((month) => (
-                            <SelectItem
-                              key={month.value}
-                              value={month.value}
-                              className="text-xs"
-                            >
-                              {month.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                {frequency === "quarterly" && (
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
+                      <SelectValue placeholder="Quarter" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      {quartersList.map((quarter) => (
+                        <SelectItem
+                          key={quarter.value}
+                          value={quarter.value}
+                          className="text-xs"
+                        >
+                          {quarter.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-                    {frequency === "quarterly" && (
-                      <Select value={period} onValueChange={setPeriod}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
-                          <SelectValue placeholder="Quarter" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          {quartersList.map((quarter) => (
-                            <SelectItem
-                              key={quarter.value}
-                              value={quarter.value}
-                              className="text-xs"
-                            >
-                              {quarter.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                {frequency === "half-yearly" && (
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
+                      <SelectValue placeholder="Half Year" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      {halfYearsList.map((half) => (
+                        <SelectItem
+                          key={half.value}
+                          value={half.value}
+                          className="text-xs"
+                        >
+                          {half.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-                    {frequency === "half-yearly" && (
-                      <Select value={period} onValueChange={setPeriod}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
-                          <SelectValue placeholder="Half Year" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          {halfYearsList.map((half) => (
-                            <SelectItem
-                              key={half.value}
-                              value={half.value}
-                              className="text-xs"
-                            >
-                              {half.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {frequency === "annually" && (
-                      <Select value={period} onValueChange={setPeriod}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
-                          <SelectValue placeholder="Year" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          {yearsList.map((year) => (
-                            <SelectItem
-                              key={year.value}
-                              value={year.value}
-                              className="text-xs"
-                            >
-                              {year.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
+                {frequency === "annually" && (
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 h-8 w-32 text-xs">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      {yearsList.map((year) => (
+                        <SelectItem
+                          key={year.value}
+                          value={year.value}
+                          className="text-xs"
+                        >
+                          {year.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            {/* Key Metrics */}
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fadeIn"
-              style={{ animationDelay: "0.1s" }}
-            >
-              <Card
-                className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300"
-                onClick={() => setSelectedStatus("all")}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-lg"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Total Checkpoints
-                  </CardTitle>
-                  <div className="h-7 w-7 rounded-full bg-blue-500/10 flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-blue-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {complianceStats.total}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card
-                className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300"
-                onClick={() => setSelectedStatus("compliant")}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent rounded-lg"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Compliant
-                  </CardTitle>
-                  <div className="h-7 w-7 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-400">
-                    {complianceStats.compliant}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {complianceStats.total > 0
-                      ? Math.round(
-                          (complianceStats.compliant / complianceStats.total) *
-                            100
-                        )
-                      : 0}
-                    % of total
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300"
-                onClick={() => setSelectedStatus("pending")}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent rounded-lg"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Pending
-                  </CardTitle>
-                  <div className="h-7 w-7 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                    <Clock className="h-3.5 w-3.5 text-yellow-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-400">
-                    {complianceStats.pending}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {complianceStats.total > 0
-                      ? Math.round(
-                          (complianceStats.pending / complianceStats.total) *
-                            100
-                        )
-                      : 0}
-                    % of total
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300"
-                onClick={() => setSelectedStatus("overdue")}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent rounded-lg"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Overdue
-                  </CardTitle>
-                  <div className="h-7 w-7 rounded-full bg-red-500/10 flex items-center justify-center">
-                    <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-400">
-                    {complianceStats.overdue}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Immediate attention required
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Regulatory Department Cards - Top Section */}
-            <div
-              className="mb-6 animate-fadeIn"
-              style={{ animationDelay: "0.2s" }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-                  Regulatory Departments
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-normal text-gray-400 border-gray-700"
-                  >
-                    Sorted by Criticality
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-normal text-gray-400 border-gray-700"
-                  >
-                    {regulatoryDepts.length} Departments
-                  </Badge>
-                </div>
+        {/* Key Metrics */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fadeIn"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <Card
+            className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300"
+            onClick={() => setSelectedStatus("all")}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-lg"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Checkpoints
+              </CardTitle>
+              <div className="h-7 w-7 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <FileText className="h-3.5 w-3.5 text-blue-400" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {regulatoryDepts.map((dept, index) => (
-                  <Card
-                    key={dept.name}
-                    className={`bg-gray-800 border-gray-700 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl group overflow-hidden shadow-lg ${getCriticalityBorderColor(
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {complianceStats.total}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300"
+            onClick={() => setSelectedStatus("compliant")}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent rounded-lg"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Compliant
+              </CardTitle>
+              <div className="h-7 w-7 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-400">
+                {complianceStats.compliant}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {complianceStats.total > 0
+                  ? Math.round(
+                      (complianceStats.compliant / complianceStats.total) * 100
+                    )
+                  : 0}
+                % of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300"
+            onClick={() => setSelectedStatus("pending")}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent rounded-lg"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Pending
+              </CardTitle>
+              <div className="h-7 w-7 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-3.5 w-3.5 text-yellow-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-400">
+                {complianceStats.pending}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {complianceStats.total > 0
+                  ? Math.round(
+                      (complianceStats.pending / complianceStats.total) * 100
+                    )
+                  : 0}
+                % of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="bg-gray-800 border-gray-700 card-hover overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300"
+            onClick={() => setSelectedStatus("overdue")}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent rounded-lg"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Overdue
+              </CardTitle>
+              <div className="h-7 w-7 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-400">
+                {complianceStats.overdue}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Immediate attention required
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Regulatory Department Cards - Top Section */}
+        <div className="mb-6 animate-fadeIn" style={{ animationDelay: "0.2s" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+              Regulatory Departments
+            </h2>
+            <div className="flex items-center space-x-2">
+              <Badge
+                variant="outline"
+                className="text-xs font-normal text-gray-400 border-gray-700"
+              >
+                Sorted by Criticality
+              </Badge>
+              <Badge
+                variant="outline"
+                className="text-xs font-normal text-gray-400 border-gray-700"
+              >
+                {regulatoryDepts.length} Departments
+              </Badge>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {regulatoryDepts.map((dept, index) => (
+              <Card
+                key={dept.name}
+                className={`bg-gray-800 border-gray-700 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl group overflow-hidden shadow-lg ${getCriticalityBorderColor(
+                  dept.criticality
+                )}`}
+                onClick={() => setSelectedCheckpoint(dept.name)}
+                style={{ animationDelay: `${0.1 * index}s` }}
+              >
+                <CardContent className="p-4">
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${getCriticalityColor(
                       dept.criticality
-                    )}`}
-                    onClick={() => setSelectedCheckpoint(dept.name)}
-                    style={{ animationDelay: `${0.1 * index}s` }}
-                  >
-                    <CardContent className="p-4">
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-br ${getCriticalityColor(
-                          dept.criticality
-                        )} opacity-50 group-hover:opacity-70 transition-opacity duration-300 rounded-lg`}
-                      />
-                      <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-bold text-sm text-white">
-                              {dept.name}
-                            </h3>
-                            <Shield className="h-3 w-3 text-gray-400 group-hover:text-blue-400 transition-colors duration-300" />
-                          </div>
-                          <Badge
-                            className={`text-xs ${
-                              dept.criticality === "Critical"
-                                ? "bg-red-600 text-white"
-                                : dept.criticality === "High"
-                                ? "bg-orange-600 text-white"
-                                : dept.criticality === "Medium"
-                                ? "bg-yellow-600 text-white"
-                                : "bg-green-600 text-white"
-                            }`}
-                          >
-                            {dept.criticality}
-                          </Badge>
+                    )} opacity-50 group-hover:opacity-70 transition-opacity duration-300 rounded-lg`}
+                  />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-bold text-sm text-white">
+                          {dept.name}
+                        </h3>
+                        <Shield className="h-3 w-3 text-gray-400 group-hover:text-blue-400 transition-colors duration-300" />
+                      </div>
+                      <Badge
+                        className={`text-xs ${
+                          dept.criticality === "Critical"
+                            ? "bg-red-600 text-white"
+                            : dept.criticality === "High"
+                            ? "bg-orange-600 text-white"
+                            : dept.criticality === "Medium"
+                            ? "bg-yellow-600 text-white"
+                            : "bg-green-600 text-white"
+                        }`}
+                      >
+                        {dept.criticality}
+                      </Badge>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-center">
+                        <div
+                          className={`text-2xl font-bold ${getPercentageColor(
+                            dept.percentage
+                          )} transition-colors duration-300`}
+                        >
+                          {dept.percentage}%
                         </div>
-                        <div className="space-y-3">
-                          <div className="text-center">
-                            <div
-                              className={`text-2xl font-bold ${getPercentageColor(
-                                dept.percentage
-                              )} transition-colors duration-300`}
-                            >
-                              {dept.percentage}%
-                            </div>
-                            <p className="text-xs text-gray-400">
-                              Compliance Rate
-                            </p>
-                          </div>
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-gray-400">
-                                Total: {dept.total}
-                              </span>
-                              <span className="text-green-400">
-                                ✓ {dept.compliant}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                              <span className="text-yellow-400">
-                                ⏳ {dept.pending}
-                              </span>
-                              <span className="text-red-400">
-                                ⚠ {dept.overdue}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              SPOC: {dept.spoc}
-                            </div>
-                          </div>
-                          <Progress
-                            value={dept.percentage}
-                            className="h-1.5 transition-all duration-300 group-hover:h-2"
-                          />
+                        <p className="text-xs text-gray-400">Compliance Rate</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">
+                            Total: {dept.total}
+                          </span>
+                          <span className="text-green-400">
+                            ✓ {dept.compliant}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-yellow-400">
+                            ⏳ {dept.pending}
+                          </span>
+                          <span className="text-red-400">⚠ {dept.overdue}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          SPOC: {dept.spoc}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <Card
-              className="bg-gray-800 border-gray-700 shadow-xl mb-6 animate-fadeIn overflow-hidden hover:shadow-2xl transition-all duration-300"
-              style={{ animationDelay: "0.3s" }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-700/20 to-transparent"></div>
-              <CardHeader className="relative z-10 pb-2">
-                <CardTitle className="text-sm font-semibold text-white uppercase tracking-wider">
-                  Quick Actions
-                </CardTitle>
-                <CardDescription className="text-xs text-gray-400">
-                  Common tasks and shortcuts
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-                  <Button
-                    onClick={() => router.push("/checkpoints")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-4 w-4" />
+                      <Progress
+                        value={dept.percentage}
+                        className="h-1.5 transition-all duration-300 group-hover:h-2"
+                      />
                     </div>
-                    <span className="truncate">New Checkpoint</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/policies-sops")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Policies & SOPs</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/rbi-audit")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">RBI Audit</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/users")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Manage Users</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/regulatory-departments")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <Shield className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Regulatory Depts</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/reports")}
-                    className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
-                      <BarChart3 className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Generate Report</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </main>
-      </div>
+        </div>
 
+        {/* Quick Actions */}
+        <Card
+          className="bg-gray-800 border-gray-700 shadow-xl mb-6 animate-fadeIn overflow-hidden hover:shadow-2xl transition-all duration-300"
+          style={{ animationDelay: "0.3s" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-700/20 to-transparent"></div>
+          <CardHeader className="relative z-10 pb-2">
+            <CardTitle className="text-sm font-semibold text-white uppercase tracking-wider">
+              Quick Actions
+            </CardTitle>
+            <CardDescription className="text-xs text-gray-400">
+              Common tasks and shortcuts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              <Button
+                onClick={() => router.push("/checkpoints")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <span className="truncate">New Checkpoint</span>
+              </Button>
+              <Button
+                onClick={() => router.push("/policies-sops")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="h-4 w-4" />
+                </div>
+                <span className="truncate">Policies & SOPs</span>
+              </Button>
+              <Button
+                onClick={() => router.push("/rbi-audit")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+                <span className="truncate">RBI Audit</span>
+              </Button>
+              <Button
+                onClick={() => router.push("/users")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-4 w-4" />
+                </div>
+                <span className="truncate">Manage Users</span>
+              </Button>
+              <Button
+                onClick={() => router.push("/regulatory-departments")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-4 w-4" />
+                </div>
+                <span className="truncate">Regulatory Depts</span>
+              </Button>
+              <Button
+                onClick={() => router.push("/reports")}
+                className="h-16 flex items-center justify-start px-3 space-x-2 bg-yellow-500 hover:bg-yellow-600 transform transition-all duration-300 hover:scale-102 hover:shadow-lg text-sm shadow-lg min-w-0"
+              >
+                <div className="h-8 w-8 rounded-full bg-yellow-600/50 flex items-center justify-center flex-shrink-0">
+                  <BarChart3 className="h-4 w-4" />
+                </div>
+                <span className="truncate">Generate Report</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       {/* All the existing dialogs remain the same... */}
       {/* Regulatory Department Detail Modal */}
       <Dialog
@@ -831,8 +811,6 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Rest of the dialogs remain the same... */}
-    </div>
+    </main>
   );
 }

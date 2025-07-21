@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
-import User from "@/lib/models/user";
-import Department from "@/lib/models/department";
+import Checkpoint from "@/lib/models/checkpoint";
+import SubCheckpoint from "@/lib/models/subcheckpoint";
 import { getUser } from "@/lib/utilities";
 
 export async function GET(request: Request) {
@@ -17,16 +17,31 @@ export async function GET(request: Request) {
   }
 
   try {
-    const user = await getUser(accessToken);
+    await getUser(accessToken);
   } catch (e) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   await connectDB();
 
-  const allUsers = await User.find().select("-password -refreshToken");
+  const checkpoints = await Checkpoint.find();
+  const returnArray = <any[]>[];
+  await Promise.all(
+    checkpoints.map(async (checkpoint) => {
+      console.log(checkpoint);
+      const subcheckpoints = await SubCheckpoint.find({
+        checkpoint: checkpoint._id,
+      });
+      returnArray.push({
+        ...checkpoint.toObject(),
+        subCheckpoints: subcheckpoints,
+      });
+    })
+  );
 
-  return NextResponse.json({ allUsers: allUsers });
+  console.log(returnArray);
+
+  return NextResponse.json({ checkpoints: returnArray });
 }
 
 export async function POST(request: Request) {
@@ -39,53 +54,42 @@ export async function POST(request: Request) {
       { status: 401 }
     );
   }
-
+  let user;
   try {
-    const user = await getUser(accessToken);
+    user = await getUser(accessToken);
   } catch (e) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   await connectDB();
-  const { email, password, name, role, department } = await request.json();
-
-  if (!email || !password) {
-    return NextResponse.json(
-      { message: "Email and password are required" },
-      { status: 400 }
-    );
-  }
+  const data = await request.json();
 
   try {
-    const newUser = await User.create({
-      email,
-      password,
-      name,
-      role,
-      department,
+    const newCheckpoint = await Checkpoint.create({
+      ...data,
     });
-    const userWithoutPassword = newUser.toObject();
-    delete userWithoutPassword.password;
 
-    await Department.findOneAndUpdate(
-      { name: department },
-      { $inc: { userCount: 1 } }
+    await Promise.all(
+      data?.subCheckpoints?.map(async (subpoint: {}) => {
+        await SubCheckpoint.create({
+          checkpoint: newCheckpoint._id,
+          ...subpoint,
+        });
+      })
     );
 
     return NextResponse.json(
-      { message: "User registered successfully", user: userWithoutPassword },
+      {
+        message: "Checkpoint created successfully",
+        checkpoint: newCheckpoint,
+      },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Registration error:", error);
-    if (error.code == 11000) {
-      return NextResponse.json(
-        { message: "Email address already exists." },
-        { status: 409 }
-      );
-    }
+    console.log("Checkpoint create error:", error);
+
     return NextResponse.json(
-      { message: "User create error: ", error: error.message },
+      { message: "Checkpoint create error: ", error: error },
       { status: 500 }
     );
   }
@@ -112,33 +116,24 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { _id, password, email, refreshToken, ...updates } = body;
-    const user = await User.findByIdAndUpdate(
+
+    const { _id, ...updates } = body;
+
+    const checkpoint = await Checkpoint.findByIdAndUpdate(
       _id,
       { $set: updates },
-      { new: false, runValidators: true }
-    ).select("-password -refreshToken");
-
-    if (updates.department && updates.department !== user.department) {
-      await Department.findOneAndUpdate(
-        { name: user.department },
-        { $inc: { userCount: -1 } }
-      );
-      await Department.findOneAndUpdate(
-        { name: updates.department },
-        { $inc: { userCount: 1 } }
-      );
-    }
-
-    return NextResponse.json(
-      { message: "User updated successfully" },
-      { status: 204 }
+      { new: true, runValidators: true }
     );
+
+    return NextResponse.json({
+      message: "Checkpoint updated successfully",
+      checkpoint,
+    });
   } catch (error: any) {
     console.error("Update error:", error);
 
     return NextResponse.json(
-      { message: "User update error: ", error: error },
+      { message: "Checkpoint update error: ", error: error },
       { status: 500 }
     );
   }
@@ -165,17 +160,14 @@ export async function DELETE(request: Request) {
 
   try {
     const { _id } = await request.json();
-    const user = await User.findByIdAndDelete(_id);
-    await Department.findOneAndUpdate(
-      { name: user.department },
-      { $inc: { userCount: -1 } }
-    );
-    return NextResponse.json({ message: "Account deleted successfully" });
+    const checkpoint = await Checkpoint.findByIdAndDelete(_id);
+    await SubCheckpoint.deleteMany({ checkpoint: checkpoint._id });
+    return NextResponse.json({ message: "Checkpoint deleted successfully" });
   } catch (error) {
-    console.error("Update error:", error);
+    console.error("Delete error:", error);
 
     return NextResponse.json(
-      { message: "User delete error: ", error: error },
+      { message: "Checkpoint delete error: ", error: error },
       { status: 500 }
     );
   }

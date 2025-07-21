@@ -49,21 +49,87 @@ const useapi = () => {
     if (response.ok) {
       return await response.json();
     } else {
-      try {
-        throw await response.json();
-      } catch (e) {
-        throw "Server error";
-      }
+      throw await response.json();
     }
   };
 
-  const endpoints = { user: "/api/user", allusers: "/api/" };
+  const fileUpload = async (file: any) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      return await res.json();
+    } else {
+      throw await res.json();
+    }
+  };
 
   const getUserdata = async () => await crud("/api/user", "GET");
   const getAllUsersdata = async () => await crud("/api/allusers", "GET");
-  const createUser = async (data: {}) => await crud("/api/users", "POST", data);
+  const createUser = async (data: {}) =>
+    await crud("/api/allusers", "POST", data);
+  const deleteUser = async (data: {}) =>
+    await crud("/api/allusers", "DELETE", data);
 
-  return { login, logout, getUserdata, getAllUsersdata, createUser };
+  const getDepartments = async () => await crud("/api/department", "GET");
+  const createDepartment = async (data: {}) =>
+    await crud("/api/department", "POST", data);
+  const updateDepartment = async (data: {}) =>
+    await crud("/api/department", "PUT", data);
+  const deleteDepartment = async (data: {}) =>
+    await crud("/api/department", "DELETE", data);
+
+  const getRegulatoryDepartments = async () =>
+    await crud("/api/regulatory-department", "GET");
+  const createRegulatoryDepartment = async (data: {}) =>
+    await crud("/api/regulatory-department", "POST", data);
+  const updateRegulatoryDepartment = async (data: {}) =>
+    await crud("/api/regulatory-department", "PUT", data);
+  const deleteRegulatoryDepartment = async (data: {}) =>
+    await crud("/api/regulatory-department", "DELETE", data);
+
+  const getCheckpoints = async () => await crud("/api/checkpoint", "GET");
+  const createCheckpoint = async (data: {}) =>
+    await crud("/api/checkpoint", "POST", data);
+  const updateCheckpoint = async (data: {}) =>
+    await crud("/api/checkpoint", "PUT", data);
+  const deleteCheckpoint = async (data: {}) =>
+    await crud("/api/checkpoint", "DELETE", data);
+
+  const updateSubCheckpoint = async (data: {}) =>
+    await crud("/api/subcheckpoint", "PATCH", data);
+
+  return {
+    login,
+    logout,
+    getUserdata,
+    getAllUsersdata,
+    createUser,
+    deleteUser,
+
+    getDepartments,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+
+    getRegulatoryDepartments,
+    createRegulatoryDepartment,
+    updateRegulatoryDepartment,
+    deleteRegulatoryDepartment,
+
+    getCheckpoints,
+    createCheckpoint,
+    updateCheckpoint,
+    deleteCheckpoint,
+
+    fileUpload,
+
+    updateSubCheckpoint,
+  };
 };
 
 export default useapi;

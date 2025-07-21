@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -18,9 +18,9 @@ import {
   ChevronRight,
   BookOpen,
   AlertTriangle,
-} from "lucide-react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -34,18 +34,19 @@ const navigation = [
   { name: "RBI Audit", href: "/rbi-audit", icon: AlertTriangle },
   { name: "Policies & SOPs", href: "/policies-sops", icon: BookOpen },
   { name: "Settings", href: "/settings", icon: Settings },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div
       className={cn(
         "bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300",
-        collapsed ? "w-16" : "w-64",
+        collapsed ? "w-16" : "w-64"
       )}
+      id="main-sidebar"
     >
       {/* Logo */}
       <div className="py-4 px-3 border-b border-gray-700 flex justify-center items-center">
@@ -64,7 +65,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         {navigation.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = pathname === item.href;
           return (
             <Link key={item.name} href={item.href}>
               <Button
@@ -72,14 +73,15 @@ export function Sidebar() {
                 className={cn(
                   "w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700/50 mb-0.5 text-sm transition-colors duration-200",
                   collapsed ? "px-2" : "px-3",
-                  isActive && "bg-[#e9b306] text-black hover:bg-[#d58600] hover:text-black",
+                  isActive &&
+                    "bg-[#e9b306] text-black hover:bg-[#d58600] hover:text-black"
                 )}
               >
                 <item.icon className={cn("h-4 w-4", collapsed ? "" : "mr-3")} />
                 {!collapsed && <span>{item.name}</span>}
               </Button>
             </Link>
-          )
+          );
         })}
       </nav>
 
@@ -91,9 +93,13 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className="w-full text-gray-400 hover:text-white hover:bg-gray-700/50"
         >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {collapsed ? (
+            <ChevronRight className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronLeft className="h-3.5 w-3.5" />
+          )}
         </Button>
       </div>
     </div>
-  )
+  );
 }
