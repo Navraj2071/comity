@@ -103,6 +103,11 @@ const useapi = () => {
   const updateSubCheckpoint = async (data: {}) =>
     await crud("/api/subcheckpoint", "PATCH", data);
 
+  const getSops = async () => await crud("/api/sop", "GET");
+  const createSop = async (data: {}) => await crud("/api/sop", "POST", data);
+  const updateSop = async (data: {}) => await crud("/api/sop", "PUT", data);
+  const deleteSop = async (data: {}) => await crud("/api/sop", "DELETE", data);
+
   return {
     login,
     logout,
@@ -129,6 +134,11 @@ const useapi = () => {
     fileUpload,
 
     updateSubCheckpoint,
+
+    getSops,
+    createSop,
+    updateSop,
+    deleteSop,
   };
 };
 

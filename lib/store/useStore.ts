@@ -13,6 +13,7 @@ const useStore = () => {
     departments: null,
     regulatoryDepartments: null,
     checkpoints: null,
+    sops: null,
   });
 
   const fetchFunctions = {
@@ -21,6 +22,7 @@ const useStore = () => {
     departments: api.getDepartments,
     regulatoryDepartments: api.getRegulatoryDepartments,
     checkpoints: api.getCheckpoints,
+    sops: api.getSops,
   };
 
   const fetchDataFromAPI = async (table: string) => {

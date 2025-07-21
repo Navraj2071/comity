@@ -1,6 +1,7 @@
-import mongoose, { Schema, models, model, Document } from "mongoose";
+import mongoose, { Schema, models, model, Document, Types } from "mongoose";
 
 export interface ISOPVersion extends Document {
+  sop: Types.ObjectId;
   version: 1.0;
   fileName: "";
   fileSize: "";
@@ -24,6 +25,7 @@ const SOPVersionSchema = new Schema<ISOPVersion>({
   reviewDate: { type: String, unique: true },
   approvedBy: { type: String, unique: true },
   approvalDate: { type: String, unique: true },
+  sop: { type: Schema.Types.ObjectId, ref: "SOP", required: true },
 });
 
 const SOPVersion =

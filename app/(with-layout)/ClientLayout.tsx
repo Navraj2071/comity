@@ -2,7 +2,6 @@
 
 import type React from "react";
 import { Inter } from "next/font/google";
-import "./globals.css";
 import { useEffect } from "react";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
