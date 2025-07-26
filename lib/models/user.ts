@@ -1,11 +1,11 @@
-import mongoose, { Schema, models, model, Document } from "mongoose";
+import mongoose, { Schema, models, model, Document, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 
 export interface IUser extends Document {
   name: string;
   email: string;
-  role: "Admin" | "Head of Department" | "SPOC" | "User" | "Reviewer";
-  department: string;
+  role: "Admin" | "User" | "Super-user";
+  department: Types.ObjectId;
   status: "Active" | "Inactive";
   password?: string;
   refreshToken?: string;
@@ -26,7 +26,7 @@ const UserSchema = new Schema<IUser>(
       match: [/.+@.+\..+/, "Please enter a valid email address"],
     },
     role: { type: String, default: "User" },
-    department: { type: String },
+    department: { type: Schema.ObjectId, ref: "Department" },
     status: { type: String, default: "Active" },
     password: {
       type: String,

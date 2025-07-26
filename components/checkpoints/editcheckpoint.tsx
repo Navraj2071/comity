@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,22 +24,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus,
-  Edit,
   Trash2,
-  Search,
-  Calendar,
-  Building2,
-  Clock,
-  Repeat,
   Upload,
   Download,
   FileText,
   Settings,
 } from "lucide-react";
 import {
-  addCheckpoint,
-  getUsers,
-  getDepartments,
   type CheckpointType,
   type RecurringFrequency,
   getFinancialYears,
@@ -56,10 +40,12 @@ import useapi from "../api/api";
 import { Alert, AlertDescription } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ClipLoader } from "react-spinners";
+import { getSomeValueWithId } from "@/lib/tools";
 
-const CreateCheckpoint = ({
+const EditCheckpoint = ({
   isCreateDialogOpen,
   setIsCreateDialogOpen,
+  selectedCheckpoint,
   store,
 }: any) => {
   const api = useapi();
@@ -80,7 +66,6 @@ const CreateCheckpoint = ({
         title: "",
         department: "",
         deadline: "",
-        assignedTo: "",
         isRemarksRequired: false,
         remarksType: "text",
         remarksPlaceholder: "",
@@ -93,11 +78,14 @@ const CreateCheckpoint = ({
   const [status, setStatus] = useState("");
   const [createMode, setCreateMode] = useState("manual");
   const [financialYears, setFinancialYears] = useState<string[]>([]);
-  const [bulkUploadFile, setBulkUploadFile] = useState(null);
 
   useEffect(() => {
     setFinancialYears(getFinancialYears());
   }, []);
+
+  useEffect(() => {
+    setCheckpointForm(selectedCheckpoint);
+  }, [selectedCheckpoint]);
 
   const addSubCheckpoint = (index: number) => {
     setCheckpointForm((prev: any) => {
@@ -106,7 +94,6 @@ const CreateCheckpoint = ({
         title: "",
         department: "",
         deadline: "",
-        assignedTo: "",
         isRemarksRequired: false,
         remarksType: "text",
         remarksPlaceholder: "",
@@ -140,32 +127,107 @@ const CreateCheckpoint = ({
     });
   };
 
-  const handleBulkUpload = (file: File) => {
-    setBulkUploadFile(file);
-    // In a real implementation, you would parse the CSV/Excel file here
-    // and populate the checkpoints data
+  const handleBulkUpload = async (file: File) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.style.display = "none"; // Hidden
+    document.body.appendChild(input);
+
+    // 2. Define the onchange handler
+    input.onchange = async (event) => {
+      const file = event.target.files[0];
+
+      const text = await file.text();
+      const lines = text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      const mainCheckpointHeaders = lines[0]
+        .split(",")
+        .slice(0, 8)
+        .map((h) => h.trim());
+
+      const mainCheckpointValues = lines[1]
+        .split(",")
+        .slice(0, 8)
+        .map((v) => v.trim());
+
+      let regDept = "";
+      try {
+        regulatoryDepartments.map((dept: any) => {
+          if (dept.name === mainCheckpointValues[2]) regDept = dept._id;
+        });
+      } catch {}
+
+      const checkpointData = {
+        letterNumber: mainCheckpointValues[0],
+        date: mainCheckpointValues[1],
+        regulatory: regDept,
+        // regulatory: mainCheckpointValues[2],
+        title: mainCheckpointValues[3],
+        details: mainCheckpointValues[4],
+        type: mainCheckpointValues[5],
+        financialYear: mainCheckpointValues[6],
+        frequency: mainCheckpointValues[7],
+        subCheckpoints: [],
+      };
+
+      const subCheckpointHeaders = lines[0]
+        .split(",")
+        .slice(8)
+        .join(",")
+        .split(",")
+        .map((h) => h.trim());
+
+      for (let i = 2; i < lines.length; i++) {
+        const row = lines[i].split(",").map((v) => v.trim());
+        const subRow = row.slice(8);
+
+        let department = "";
+        try {
+          departments.map((dept: any) => {
+            if (dept.name === subRow[2]) department = dept._id;
+          });
+        } catch {}
+
+        const subCheckpoint = {
+          title: subRow[1],
+          department: department,
+          deadline: subRow[3],
+          isRemarksRequired: subRow[4].toLowerCase() === "true",
+          remarksType: subRow[5],
+          remarksPlaceholder: subRow[6],
+          isAttachmentRequired: subRow[7].toLowerCase() === "true",
+          responseTemplate: null,
+        };
+
+        checkpointData.subCheckpoints.push(subCheckpoint);
+      }
+
+      console.log(checkpointData);
+      console.log(checkpointForm);
+
+      setCheckpointForm(checkpointData);
+      setCreateMode("manual");
+
+      document.body.removeChild(input);
+    };
+
+    input.click();
   };
 
   const downloadBulkTemplate = () => {
-    const csvContent = `Letter Number,Date,Regulatory,Title,Details,Type,Financial Year,Frequency,Sub-Checkpoint Title,Department,Assigned To,Deadline,Remarks Required,Remarks Type,Remarks Placeholder,Attachment Required
-RBI/2024/001,2024-01-15,RBI,Sample Checkpoint,Sample details,ad-hoc,2023-2024,,Review Process,Operations,John Doe,2024-02-15,true,text,Enter your review comments,true
-RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,false`;
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "checkpoint_bulk_upload_template.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    try {
+      window.open("/checkpoint_template.csv");
+    } catch {
+      alert("Unable to download!");
+    }
   };
 
   const handleCreateCheckpoint = async () => {
     setLoading(true);
     let apiData = { ...checkpointForm };
-    console.log(apiData);
     await Promise.all(
       apiData.subCheckpoints?.map(async (spoint) => {
         if (spoint.responseTemplate) {
@@ -193,6 +255,30 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
       .catch((err) => console.log(err));
     setLoading(false);
   };
+
+  const getUpcomingDeadline = () => {
+    const frequency = checkpointForm.frequency;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    let deadline = now;
+
+    if (frequency === "monthly") {
+      deadline = new Date(year, month + 1, 0);
+    }
+    return `${deadline.toLocaleDateString()}, recurring ${frequency}`;
+  };
+
+  const getAssignedTo = (subpointIndex: number) => {
+    const assignedToId = getSomeValueWithId(
+      "spoc",
+      departments,
+      checkpointForm.subCheckpoints[subpointIndex].department
+    );
+    const name = getSomeValueWithId("name", users, assignedToId);
+    return name;
+  };
+
   return (
     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
       <DialogTrigger asChild>
@@ -485,7 +571,7 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
                           {departments?.map((dept: any) => (
                             <SelectItem
                               key={`department-select-${dept._id}`}
-                              value={dept.name}
+                              value={dept._id}
                             >
                               {dept.name}
                             </SelectItem>
@@ -496,11 +582,11 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
                     <div className="space-y-2">
                       <Label>Assigned User</Label>
                       <Select
-                        value={subCheckpoint.assignedTo}
+                        value={getAssignedTo(index)}
                         onValueChange={(value) =>
                           updateSubCheckpoint(index, "assignedTo", value)
                         }
-                        disabled={!subCheckpoint.department}
+                        disabled={true}
                       >
                         <SelectTrigger className="bg-gray-700 border-gray-600">
                           <SelectValue placeholder="Select user" />
@@ -525,11 +611,21 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
                       </Select>
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <Label>Deadline</Label>
+                      <Label>
+                        {checkpointForm.type === "recurring" ? "Upcoming " : ""}
+                        Deadline
+                      </Label>
                       <Input
-                        type="date"
+                        type={
+                          checkpointForm.type === "recurring" ? "text" : "date"
+                        }
+                        disabled={checkpointForm.type === "recurring"}
                         className="bg-gray-700 border-gray-600"
-                        value={subCheckpoint.deadline}
+                        value={
+                          checkpointForm.type === "recurring"
+                            ? getUpcomingDeadline()
+                            : subCheckpoint.deadline
+                        }
                         onChange={(e) =>
                           updateSubCheckpoint(index, "deadline", e.target.value)
                         }
@@ -720,77 +816,45 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
               </div>
 
               <div className="border-2 border-dashed border-gray-600 rounded-lg p-8">
-                {bulkUploadFile ? (
-                  <div className="text-center">
-                    <FileText className="mx-auto h-12 w-12 text-green-400 mb-4" />
-                    <p className="text-white font-medium">
-                      {bulkUploadFile.name}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {(bulkUploadFile.size / 1024).toFixed(1)} KB
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setBulkUploadFile(null)}
-                      className="mt-2 text-red-400 hover:text-red-300"
-                    >
-                      Remove File
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-white font-medium mb-2">
-                      Upload CSV or Excel file
-                    </p>
-                    <p className="text-gray-400 mb-4">
-                      Drop your file here or click to browse
-                    </p>
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleBulkUpload(file);
-                      }}
-                      className="hidden"
-                      id="bulk-upload"
-                    />
-                    <Label
-                      htmlFor="bulk-upload"
-                      className="cursor-pointer inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md font-medium"
-                    >
-                      Choose File
-                    </Label>
-                    <p className="text-xs text-gray-500 mt-4">
-                      Supported formats: CSV, XLSX, XLS (Max 5MB)
-                    </p>
-                  </div>
-                )}
+                <div className="text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-white font-medium mb-2">
+                    Upload CSV or Excel file
+                  </p>
+                  <p className="text-gray-400 mb-4">
+                    Drop your file here or click to browse
+                  </p>
+
+                  <Label
+                    htmlFor="bulk-upload"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md font-medium"
+                    onClick={handleBulkUpload}
+                  >
+                    Choose File
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-4">
+                    Supported formats: CSV (Max 5MB)
+                  </p>
+                </div>
               </div>
 
-              {bulkUploadFile && (
-                <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-300 mb-2">
-                    Upload Instructions:
-                  </h4>
-                  <ul className="text-sm text-blue-200 space-y-1">
-                    <li>• Ensure your file follows the template format</li>
-                    <li>• Each row represents a sub-checkpoint</li>
-                    <li>
-                      • Group sub-checkpoints by using the same Letter Number
-                    </li>
-                    <li>
-                      • Leave cells empty for sub-checkpoints that belong to the
-                      same main checkpoint
-                    </li>
-                    <li>
-                      • Review the data before clicking "Create Checkpoint"
-                    </li>
-                  </ul>
-                </div>
-              )}
+              <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
+                <h4 className="font-medium text-blue-300 mb-2">
+                  Upload Instructions:
+                </h4>
+                <ul className="text-sm text-blue-200 space-y-1">
+                  <li>• Ensure your file follows the template format</li>
+                  <li>• Each row represents a sub-checkpoint</li>
+                  <li>
+                    • Group sub-checkpoints by using the same Letter Number
+                  </li>
+                  <li>
+                    • Leave cells empty for sub-checkpoints that belong to the
+                    same main checkpoint
+                  </li>
+                  <li>• Review the data before clicking "Create Checkpoint"</li>
+                </ul>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -802,31 +866,31 @@ RBI/2024/001,,,,,,,Update Documentation,Legal,Jane Smith,2024-02-20,false,text,,
           </Alert>
         )}
 
-        <DialogFooter className="pt-4">
-          <Button
-            type="button"
-            className="bg-yellow-500 hover:bg-yellow-600"
-            onClick={handleCreateCheckpoint}
-            disabled={loading || (createMode === "bulk" && !bulkUploadFile)}
-          >
-            {loading ? (
-              <ClipLoader
-                color={"#000000"}
-                loading={true}
-                size={20}
-                aria-label="Loading Spinner"
-                data-testid="loader"
-              />
-            ) : (
-              <>
-                {createMode === "bulk" ? "Process Upload" : "Create Checkpoint"}
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        {createMode === "manual" && (
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              className="bg-yellow-500 hover:bg-yellow-600"
+              onClick={handleCreateCheckpoint}
+              disabled={loading || createMode === "bulk"}
+            >
+              {loading ? (
+                <ClipLoader
+                  color={"#000000"}
+                  loading={true}
+                  size={20}
+                  aria-label="Loading Spinner"
+                  data-testid="loader"
+                />
+              ) : (
+                <>Create Checkpoint</>
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
 };
 
-export default CreateCheckpoint;
+export default EditCheckpoint;

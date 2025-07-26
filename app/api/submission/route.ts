@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
-import Checkpoint from "@/lib/models/checkpoint";
-import SubCheckpoint from "@/lib/models/subcheckpoint";
+import Submission from "@/lib/models/submission";
 import { getUser } from "@/lib/utilities";
 
 export async function GET(request: Request) {
@@ -24,21 +23,9 @@ export async function GET(request: Request) {
 
   await connectDB();
 
-  const checkpoints = await Checkpoint.find();
-  const returnArray = <any[]>[];
-  await Promise.all(
-    checkpoints.map(async (checkpoint) => {
-      const subcheckpoints = await SubCheckpoint.find({
-        checkpoint: checkpoint._id,
-      });
-      returnArray.push({
-        ...checkpoint.toObject(),
-        subCheckpoints: subcheckpoints,
-      });
-    })
-  );
+  const submissions = await Submission.find();
 
-  return NextResponse.json({ checkpoints: returnArray });
+  return NextResponse.json({ submissions });
 }
 
 export async function POST(request: Request) {
@@ -62,38 +49,29 @@ export async function POST(request: Request) {
   const data = await request.json();
 
   try {
-    const newCheckpoint = await Checkpoint.create({
+    const newSubmission = await Submission.create({
       ...data,
-      createdBy: user._id,
+      submittedBy: user._id,
     });
-
-    await Promise.all(
-      data?.subCheckpoints?.map(async (subpoint: any) => {
-        await SubCheckpoint.create({
-          checkpoint: newCheckpoint._id,
-          ...subpoint,
-        });
-      })
-    );
 
     return NextResponse.json(
       {
-        message: "Checkpoint created successfully",
-        checkpoint: newCheckpoint,
+        message: "Submission created successfully",
+        submission: newSubmission,
       },
       { status: 201 }
     );
   } catch (error: any) {
-    console.log("Checkpoint create error:", error);
+    console.error("Submission create error:", error);
 
     return NextResponse.json(
-      { message: "Checkpoint create error: ", error: error },
+      { message: "Submission create error: ", error: error },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
 
@@ -115,23 +93,23 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    const { _id, ...updates } = body;
+    const { _id, submittedBy, ...updates } = body;
 
-    const checkpoint = await Checkpoint.findByIdAndUpdate(
+    const submission = await Submission.findByIdAndUpdate(
       _id,
       { $set: updates },
       { new: true, runValidators: true }
     );
 
     return NextResponse.json({
-      message: "Checkpoint updated successfully",
-      checkpoint,
+      message: "Submission updated successfully",
+      submission,
     });
   } catch (error: any) {
     console.error("Update error:", error);
 
     return NextResponse.json(
-      { message: "Checkpoint update error: ", error: error },
+      { message: "Submission update error: ", error: error },
       { status: 500 }
     );
   }
@@ -158,14 +136,13 @@ export async function DELETE(request: Request) {
 
   try {
     const { _id } = await request.json();
-    const checkpoint = await Checkpoint.findByIdAndDelete(_id);
-    await SubCheckpoint.deleteMany({ checkpoint: checkpoint._id });
-    return NextResponse.json({ message: "Checkpoint deleted successfully" });
+    const submission = await Submission.findByIdAndDelete(_id);
+    return NextResponse.json({ message: "Submission deleted successfully" });
   } catch (error) {
     console.error("Delete error:", error);
 
     return NextResponse.json(
-      { message: "Checkpoint delete error: ", error: error },
+      { message: "Submission delete error: ", error: error },
       { status: 500 }
     );
   }

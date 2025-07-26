@@ -21,24 +21,16 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { clearCurrentUser } from "@/lib/storage";
+
 import { useRouter } from "next/navigation";
 import useStore from "@/lib/store/useStore";
+import { BarLoader } from "react-spinners";
+import Checkpointview from "./checkpointview";
 
-interface HeaderProps {
-  checkpoints?: any[];
-}
-
-export function Header({ checkpoints }: HeaderProps) {
+export function Header() {
   const store = useStore();
-  const user = store?.db?.user;
+  const user = store?.db?.user || {};
+  const checkpoints = store?.db?.checkpoints || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
@@ -47,26 +39,25 @@ export function Header({ checkpoints }: HeaderProps) {
   const searchResults = checkpoints
     ? checkpoints.filter(
         (checkpoint) =>
-          checkpoint.letterNumber
+          checkpoint?.letterNumber
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          checkpoint.title.toLowerCase().includes(searchTerm.toLowerCase())
+          checkpoint?.title.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
 
   const handleLogout = () => {
-    clearCurrentUser();
     router.push("/login");
   };
 
   if (!user) {
     return (
       <header
-        className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10"
+        className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 px-6 py-3 sticky top-0 z-10 h-10"
         id="main-header"
       >
-        <div className="flex items-center justify-between">
-          <div className="text-white">Loading...</div>
+        <div className="flex items-center justify-center ">
+          <BarLoader color="rgb(227, 179, 0)" height={4} width={200} />
         </div>
       </header>
     );
@@ -87,7 +78,8 @@ export function Header({ checkpoints }: HeaderProps) {
             variant="outline"
             className="text-xs font-normal text-gray-400 border-gray-700 px-2 py-0"
           >
-            {user.role} • {user.department}
+            {user?.role} •{" "}
+            {store?.tools?.getDepartmentNameFromId(user?.department)}
           </Badge>
         </div>
 
@@ -109,7 +101,7 @@ export function Header({ checkpoints }: HeaderProps) {
                   <div className="p-2">
                     {searchResults.map((result) => (
                       <div
-                        key={result.id}
+                        key={result?._id}
                         className="p-2 hover:bg-gray-700 rounded cursor-pointer"
                         onClick={() => {
                           setSelectedCheckpoint(result);
@@ -119,12 +111,14 @@ export function Header({ checkpoints }: HeaderProps) {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-white">
-                            {result.letterNumber}
+                            {result?.letterNumber}
                           </span>
-                          <Badge className="text-xs">{result.regulatory}</Badge>
+                          <Badge className="text-xs">
+                            {result?.regulatory}
+                          </Badge>
                         </div>
                         <p className="text-xs text-gray-400 truncate">
-                          {result.title}
+                          {result?.title}
                         </p>
                       </div>
                     ))}
@@ -138,7 +132,6 @@ export function Header({ checkpoints }: HeaderProps) {
             )}
           </div>
 
-          {/* Notifications */}
           <Button
             variant="ghost"
             size="sm"
@@ -150,7 +143,6 @@ export function Header({ checkpoints }: HeaderProps) {
             </Badge>
           </Button>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -174,9 +166,10 @@ export function Header({ checkpoints }: HeaderProps) {
             >
               <DropdownMenuLabel className="text-gray-300">
                 <div>
-                  <p className="font-medium">{user.name}</p>
+                  <p className="font-medium">{user?.name}</p>
                   <p className="text-xs text-gray-400">
-                    {user.department} • {user.role}
+                    {store?.tools?.getDepartmentNameFromId(user?.department)} •{" "}
+                    {user?.role}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -201,86 +194,11 @@ export function Header({ checkpoints }: HeaderProps) {
           </DropdownMenu>
         </div>
       </div>
-      {/* Search Result Dialog */}
-      <Dialog
-        open={!!selectedCheckpoint}
-        onOpenChange={(open) => !open && setSelectedCheckpoint(null)}
-      >
-        <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white flex items-center justify-between">
-              Checkpoint Details
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedCheckpoint(null)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedCheckpoint && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-medium text-white">
-                  {selectedCheckpoint.title}
-                </h3>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Badge className="bg-blue-600">
-                    {selectedCheckpoint.regulatory}
-                  </Badge>
-                  <span className="text-sm text-gray-400">
-                    {selectedCheckpoint.letterNumber}
-                  </span>
-                  <span className="text-sm text-gray-400">
-                    {selectedCheckpoint.date}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-300 mt-2">
-                  {selectedCheckpoint.details}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-300">Sub-checkpoints:</h4>
-                {selectedCheckpoint.subCheckpoints &&
-                  selectedCheckpoint.subCheckpoints.map((sub: any) => (
-                    <Card key={sub.id} className="bg-gray-700 border-gray-600">
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              {sub.title}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {sub.department} • {sub.assignedTo} • Due:{" "}
-                              {sub.deadline}
-                            </p>
-                          </div>
-                          <Badge
-                            className={
-                              sub.status === "compliant"
-                                ? "bg-green-600"
-                                : sub.status === "pending"
-                                ? "bg-yellow-600"
-                                : sub.status === "overdue"
-                                ? "bg-orange-600"
-                                : "bg-red-600"
-                            }
-                          >
-                            {sub.status}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <Checkpointview
+        selectedCheckpoint={selectedCheckpoint}
+        setSelectedCheckpoint={setSelectedCheckpoint}
+        store={store}
+      />
     </header>
   );
 }

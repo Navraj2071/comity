@@ -12,16 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import {
   Table,
   TableBody,
@@ -33,31 +25,43 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import {
-  Upload,
   Search,
   FileText,
   CheckCircle2,
   AlertTriangle,
   AlertOctagon,
-  Trash2,
 } from "lucide-react";
-import { updateSubCheckpoint, getRBIObservations } from "@/lib/storage";
 import useStore from "@/lib/store/useStore";
-import useapi from "../api/api";
-import { Alert, AlertDescription } from "../ui/alert";
-import { AlertCircle } from "lucide-react";
-import { ClipLoader } from "react-spinners";
+import SubmissionPopup from "./submitdialog";
+import ViewPopup from "./viewdialog";
+import AssignPopup from "./assigndialog";
 
 export default function SubmissionsPage() {
   const store = useStore();
-  const user = store?.db?.user;
   const checkpoints = store?.db?.checkpoints;
-
+  const submittedSubmissions = store?.db?.submissions;
   const submissions = [];
 
   if (checkpoints) {
     checkpoints?.map((cpoint: any) => {
       cpoint.subCheckpoints.map((subpoint: any) => {
+        let status = "pending";
+        let attachments = [];
+        let expectedClosuredate = "";
+        let createdAt = "";
+        let assignedTo = "";
+        let submissionId: "";
+
+        submittedSubmissions?.map((submitted: any) => {
+          if (submitted.subCheckpoint === subpoint._id) {
+            status = submitted.status;
+            attachments = submitted.attachments;
+            expectedClosuredate = submitted.expectedClosuredate;
+            createdAt = submitted.createdAt;
+            assignedTo = submitted.assignedTo;
+            submissionId = submitted.id;
+          }
+        });
         submissions.push({
           id: subpoint._id,
           checkpointId: cpoint._id,
@@ -66,16 +70,18 @@ export default function SubmissionsPage() {
           subCheckpointTitle: subpoint?.title,
           letterNumber: cpoint?.letterNumber,
           regulatory: cpoint?.regulatory,
-          assignedTo: subpoint?.assignedTo,
           deadline: subpoint?.deadline,
-          status: subpoint?.status,
-          submittedBy: "",
-          submittedDate: "",
-          remarks: subpoint?.remarks,
-          attachments: subpoint?.attachments || [],
-          expectedClosureDate: null,
           type: cpoint.type,
           financialYear: cpoint.financialYear,
+          isRemarksRequired: subpoint.isRemarksRequired,
+          isAttachmentRequired: subpoint.isAttachmentRequired,
+          responseTemplate: subpoint.responseTemplate,
+          status: status,
+          attachments,
+          expectedClosuredate,
+          createdAt,
+          assignedTo,
+          submissionId,
         });
       });
     });
@@ -83,6 +89,8 @@ export default function SubmissionsPage() {
 
   const [rbiAuditSubmissions, setRbiAuditSubmissions] = useState([]);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [isViewSubmission, setIsViewSubmission] = useState(false);
+  const [isAssignDialog, setIsAssignDialog] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -94,7 +102,13 @@ export default function SubmissionsPage() {
   const [activeTab, setActiveTab] = useState("checkpoints");
   const [selectedFinancialYear, setSelectedFinancialYear] =
     useState("2023-2024");
-  const financialYears = ["2021-2022", "2022-2023", "2023-2024", "2024-2025"];
+  const financialYears = [
+    "2021-2022",
+    "2022-2023",
+    "2023-2024",
+    "2024-2025",
+    "2025-2026",
+  ];
 
   //   useEffect(() => {
   //     const rbiObservations = getRBIObservations();
@@ -139,9 +153,9 @@ export default function SubmissionsPage() {
     let filtered = [...submissions];
 
     // Filter by financial year
-    filtered = filtered.filter(
-      (sub) => sub.financialYear === selectedFinancialYear
-    );
+    // filtered = filtered.filter(
+    //   (sub) => sub.financialYear === selectedFinancialYear
+    // );
 
     // Filter by search term
     if (searchTerm) {
@@ -168,11 +182,11 @@ export default function SubmissionsPage() {
     }
 
     // Filter by period (for recurring checkpoints)
-    if (periodFilter !== "all") {
-      filtered = filtered.filter(
-        (sub) => sub.period === periodFilter || !sub.period
-      );
-    }
+    // if (periodFilter !== "all") {
+    //   filtered = filtered.filter(
+    //     (sub) => sub.period === periodFilter || !sub.period
+    //   );
+    // }
 
     // Filter to show only submissions assigned to the current user
     // filtered = filtered.filter((sub) => sub.assignedTo === user.name);
@@ -219,6 +233,8 @@ export default function SubmissionsPage() {
         return <Badge className="bg-blue-500">Pending</Badge>;
       case "submitted":
         return <Badge className="bg-green-500">Submitted</Badge>;
+      case "pending_review":
+        return <Badge className="bg-green-500">Pending Review</Badge>;
       case "overdue":
         return <Badge className="bg-red-500">Overdue</Badge>;
       case "Open":
@@ -414,21 +430,37 @@ export default function SubmissionsPage() {
                             {submission.period || "N/A"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {submission.status !== "submitted" && (
-                              <Button
-                                onClick={() => {
-                                  setSelectedSubmission(submission);
-                                  setShowSubmitDialog(true);
-                                }}
-                                className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                              >
-                                Submit
-                              </Button>
-                            )}
-                            {submission.status === "submitted" && (
+                            {submission.status !== "submitted" &&
+                              submission.status !== "pending_review" && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => {
+                                      setSelectedSubmission(submission);
+                                      setShowSubmitDialog(true);
+                                    }}
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                                  >
+                                    Submit
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      setSelectedSubmission(submission);
+                                      setIsAssignDialog(true);
+                                    }}
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                                  >
+                                    Assign
+                                  </Button>
+                                </div>
+                              )}
+                            {submission.status !== "pending" && (
                               <Button
                                 variant="outline"
                                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                                onClick={() => {
+                                  setSelectedSubmission(submission);
+                                  setIsViewSubmission(true);
+                                }}
                               >
                                 View
                               </Button>
@@ -565,309 +597,18 @@ export default function SubmissionsPage() {
         activeTab={activeTab}
         store={store}
       />
+      <ViewPopup
+        isViewSubmission={isViewSubmission}
+        setIsViewSubmission={setIsViewSubmission}
+        selectedSubmission={selectedSubmission}
+        store={store}
+      />
+      <AssignPopup
+        isAssignDialog={isAssignDialog}
+        setIsAssignDialog={setIsAssignDialog}
+        selectedSubmission={selectedSubmission}
+        store={store}
+      />
     </main>
   );
 }
-
-const SubmissionPopup = ({
-  showSubmitDialog,
-  setShowSubmitDialog,
-  selectedSubmission,
-  setSelectedSubmission,
-  activeTab,
-  store,
-}: any) => {
-  const api = useapi();
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
-
-  const [formdata, setFormdata] = useState({
-    remarks: "",
-    attachments: [],
-    expectedClosureDate: "",
-  });
-
-  const handleSubmit = async () => {
-    setStatus("");
-    setLoading(true);
-    const files = [];
-    await Promise.all(
-      formdata.attachments.map(async (file) => {
-        await api
-          .fileUpload(file)
-          .then((res) => files.push(res.url))
-          .catch((err) => console.log(err));
-      })
-    );
-
-    const apiData = { ...formdata };
-    apiData.attachments = files;
-    apiData.status = "submitted";
-    apiData._id = selectedSubmission.subCheckpointId;
-    await api
-      .updateSubCheckpoint(apiData)
-      .then((res) => {
-        setShowSubmitDialog(false);
-        store.update("checkpoints");
-        setSelectedSubmission(null);
-      })
-      .catch((err) => console.log(err));
-
-    setLoading(false);
-  };
-
-  const handleRbiAuditSubmit = (formData) => {
-    if (!selectedSubmission) return;
-
-    const updates = {
-      status: "Pending Closure",
-      progress: Number.parseInt(formData.get("progress")),
-      actionTaken: formData.get("actionTaken"),
-      departmentComments: formData.get("departmentComments"),
-      evidenceUploaded: ["evidence.pdf"], // In a real app, handle file uploads
-    };
-
-    // Update in storage
-    updateSubCheckpoint(selectedSubmission.id, updates);
-
-    // Update local state
-    setRbiAuditSubmissions((prev) =>
-      prev.map((sub) =>
-        sub.id === selectedSubmission.id ? { ...sub, ...updates } : sub
-      )
-    );
-
-    setShowSubmitDialog(false);
-    setSelectedSubmission(null);
-  };
-
-  const selectFiles = async () => {
-    try {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.multiple = true;
-      input.style.display = "none";
-
-      input.onchange = () => {
-        const files = input.files;
-        if (files && files.length > 0) {
-          setFormdata((prev: any) => {
-            let newData = { ...prev };
-            newData.attachments = Array.from(files);
-            return newData;
-          });
-        }
-        document.body.removeChild(input);
-      };
-
-      document.body.appendChild(input);
-      input.click();
-    } catch {}
-  };
-  return (
-    <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-      <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white">
-        <DialogHeader>
-          <DialogTitle>Submit Compliance Evidence</DialogTitle>
-          <DialogDescription className="text-gray-400">
-            {activeTab === "checkpoints"
-              ? "Provide evidence and remarks for the selected checkpoint"
-              : "Update progress and provide evidence for the RBI audit observation"}
-          </DialogDescription>
-        </DialogHeader>
-        {selectedSubmission && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (activeTab === "checkpoints") {
-                handleSubmit();
-              } else {
-                handleRbiAuditSubmit(new FormData(e.currentTarget));
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label className="text-gray-400">
-                {activeTab === "checkpoints" ? "Checkpoint" : "Observation"}
-              </Label>
-              <p className="text-white font-medium">
-                {activeTab === "checkpoints"
-                  ? selectedSubmission.checkpointTitle
-                  : selectedSubmission.title}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {activeTab === "checkpoints"
-                  ? selectedSubmission.subCheckpointTitle
-                  : selectedSubmission.description}
-              </p>
-            </div>
-
-            {activeTab === "rbi-audit" && (
-              <div>
-                <Label htmlFor="progress">Progress (%)</Label>
-                <Input
-                  id="progress"
-                  name="progress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  defaultValue={selectedSubmission.progress}
-                  required
-                  className="bg-gray-900 border-gray-600"
-                />
-              </div>
-            )}
-
-            <div>
-              <Label
-                htmlFor={
-                  activeTab === "checkpoints" ? "remarks" : "actionTaken"
-                }
-              >
-                {activeTab === "checkpoints" ? "Remarks" : "Action Taken"}
-              </Label>
-              <Textarea
-                id={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
-                name={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
-                placeholder={
-                  activeTab === "checkpoints"
-                    ? "Provide details about the compliance evidence"
-                    : "Describe actions taken to address the observation"
-                }
-                required
-                className="bg-gray-900 border-gray-600"
-                rows={4}
-                value={formdata.remarks}
-                onChange={(e) =>
-                  setFormdata((prev) => {
-                    let newValues = { ...prev };
-                    newValues.remarks = e.target.value;
-                    return newValues;
-                  })
-                }
-              />
-            </div>
-
-            {activeTab === "rbi-audit" && (
-              <div>
-                <Label htmlFor="departmentComments">Department Comments</Label>
-                <Textarea
-                  id="departmentComments"
-                  name="departmentComments"
-                  placeholder="Additional comments from the department"
-                  className="bg-gray-900 border-gray-600"
-                  rows={3}
-                  defaultValue={selectedSubmission.departmentComments || ""}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="evidence">Upload Evidence</Label>
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center mt-2">
-                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-gray-400 mb-2">
-                  Drop files here or click to browse
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  onClick={selectFiles}
-                >
-                  Choose Files
-                </Button>
-                <p className="text-xs text-gray-500 mt-2">
-                  Supported formats: PDF, DOCX, XLSX, JPG, PNG (Max 10MB)
-                </p>
-              </div>
-              {formdata.attachments.map((file, i) => (
-                <div
-                  className="flex items-center justify-between"
-                  key={`uploaded-file-${i}`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-400">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFormdata((prev) => {
-                        let newData = { ...prev };
-                        newData.attachments = newData.attachments.filter(
-                          (_, index) => index !== i
-                        );
-                        console.log(newData.attachments);
-                        return newData;
-                      });
-                    }}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {activeTab === "checkpoints" && (
-              <div>
-                <Label htmlFor="expectedClosureDate">
-                  Expected Closure Date
-                </Label>
-                <Input
-                  id="expectedClosureDate"
-                  name="expectedClosureDate"
-                  type="date"
-                  required
-                  className="bg-gray-900 border-gray-600"
-                />
-              </div>
-            )}
-
-            {status && status !== "" && (
-              <Alert className="bg-red-900/20 border-red-800 text-red-400">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{status}</AlertDescription>
-              </Alert>
-            )}
-
-            <DialogFooter className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowSubmitDialog(false)}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                disabled={loading}
-              >
-                {loading ? (
-                  <ClipLoader
-                    color={"#000000"}
-                    loading={true}
-                    size={20}
-                    aria-label="Loading Spinner"
-                    data-testid="loader"
-                  />
-                ) : (
-                  "Submit Evidence"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-};

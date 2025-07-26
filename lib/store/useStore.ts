@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import useapi from "@/components/api/api";
+import usestoretools from "./usestoretools";
 
 const useStore = () => {
   const api = useapi();
@@ -14,7 +15,10 @@ const useStore = () => {
     regulatoryDepartments: null,
     checkpoints: null,
     sops: null,
+    submissions: null,
   });
+
+  const [loading, setloading] = useState(false);
 
   const fetchFunctions = {
     user: api.getUserdata,
@@ -23,6 +27,7 @@ const useStore = () => {
     regulatoryDepartments: api.getRegulatoryDepartments,
     checkpoints: api.getCheckpoints,
     sops: api.getSops,
+    submissions: api.getSubmission,
   };
 
   const fetchDataFromAPI = async (table: string) => {
@@ -59,6 +64,17 @@ const useStore = () => {
     }
   };
 
+  const poppulateAllData = async () => {
+    console.log("pop data");
+    setloading(true);
+    await Promise.all(
+      Object.keys(fetchFunctions).map(async (key) => {
+        await fetchDataFromAPI(key);
+      })
+    );
+    setloading(false);
+  };
+
   useEffect(() => {
     Object.keys(fetchFunctions).map((key) => checkData(key));
   }, []);
@@ -67,7 +83,9 @@ const useStore = () => {
     fetchDataFromAPI(table);
   };
 
-  return { db, update };
+  const tools = usestoretools(db);
+
+  return { db, update, loading, poppulateAllData, tools };
 };
 
 export default useStore;

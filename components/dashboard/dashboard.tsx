@@ -22,7 +22,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header";
+import { Header } from "@/components/header/header";
 import { PieChart } from "@/components/pie-chart";
 import {
   Dialog,

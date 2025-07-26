@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header";
+import { Header } from "@/components/header/header";
 import { PieChart } from "@/components/pie-chart";
 import {
   FileText,

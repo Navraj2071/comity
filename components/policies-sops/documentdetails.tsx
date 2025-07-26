@@ -1,17 +1,6 @@
 "use client";
-
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -20,42 +9,80 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { FileText, Download } from "lucide-react";
+import { useEffect } from "react";
 
-import {
-  FileText,
-  Upload,
-  Download,
-  Eye,
-  Plus,
-  Search,
-  Clock,
-  AlertTriangle,
-} from "lucide-react";
-
-const NewDocumentDialog = ({
+const DocumentDetailsDialog = ({
   selectedDocument,
   setSelectedDocument,
   getStatusBadgeColor,
   getReviewStatus,
   store,
 }: any) => {
+  const users = store?.db?.allUsers || [];
+  const departments = store?.db?.departments || [];
+  const getDueDate = (doc: any) => {
+    const createdDate = new Date(doc.createdDate);
+    const dueDate = new Date(createdDate);
+    if (doc.reviewFrequency === "Annually") {
+      dueDate.setMonth(dueDate.getMonth() + 12);
+    } else if (doc.reviewFrequency === "Bi-annually") {
+      dueDate.setMonth(dueDate.getMonth() + 6);
+    } else if (doc.reviewFrequency === "Quarterly") {
+      dueDate.setMonth(dueDate.getMonth() + 3);
+    }
+    let currentYear = new Date().getFullYear();
+    dueDate.setFullYear(currentYear);
+    return dueDate.toLocaleDateString();
+  };
+  const getUsername = (id: string) => {
+    let username = "";
+    users?.map((user: any) => {
+      if (user._id === id) username = `${user.name} from ${user.department}`;
+    });
+    return username;
+  };
+  const getDepartment = (id: string) => {
+    let name = "";
+    departments?.map((department: any) => {
+      if (department._id === id) name = department.name;
+    });
+    return name;
+  };
+  const getlatestVersion = (doc: any) => {
+    let latestVersion = doc.versions[0];
+    doc.versions.map((version: any) => {
+      if (new Date(version.uploadDate) > new Date(latestVersion.uploadDate)) {
+        latestVersion = version;
+      }
+    });
+    return latestVersion;
+  };
+
+  let reviewer;
+  let approver;
+  let creator;
+  let department;
+  let currentVersion;
+  try {
+    reviewer = getUsername(getlatestVersion(selectedDocument).reviewedBy);
+  } catch {}
+  try {
+    approver = getUsername(getlatestVersion(selectedDocument).approvedBy);
+  } catch {}
+  try {
+    creator = getUsername(selectedDocument?.createdBy);
+  } catch {}
+  try {
+    department = getDepartment(selectedDocument?.department);
+  } catch {}
+  try {
+    currentVersion = getlatestVersion(selectedDocument).version;
+  } catch {}
+
+  useEffect(() => {}, [selectedDocument]);
+
   return (
     <Dialog
       open={!!selectedDocument}
@@ -96,9 +123,7 @@ const NewDocumentDialog = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Department:</span>
-                    <span className="text-white">
-                      {selectedDocument.department}
-                    </span>
+                    <span className="text-white">{department}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Status:</span>
@@ -118,9 +143,7 @@ const NewDocumentDialog = ({
                     <span className="text-gray-400">Next Review:</span>
                     <div className="flex items-center">
                       <span className="text-white">
-                        {new Date(
-                          selectedDocument.nextReviewDate
-                        ).toLocaleDateString()}
+                        {getDueDate(selectedDocument)}
                       </span>
                       {getReviewStatus(selectedDocument.nextReviewDate)}
                     </div>
@@ -128,25 +151,26 @@ const NewDocumentDialog = ({
                   <div className="flex justify-between">
                     <span className="text-gray-400">Reviewer:</span>
                     <span className="text-white">
-                      {selectedDocument.reviewer || "Not assigned"}
+                      {reviewer || "Not assigned"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Approver:</span>
                     <span className="text-white">
-                      {selectedDocument.approver || "Not assigned"}
+                      {approver || "Not assigned"}
                     </span>
                   </div>
-                  {selectedDocument.approvalDate && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Approval Date:</span>
-                      <span className="text-white">
-                        {new Date(
-                          selectedDocument.approvalDate
-                        ).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
+                  {selectedDocument &&
+                    getlatestVersion(selectedDocument).approvalDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Approval Date:</span>
+                        <span className="text-white">
+                          {new Date(
+                            getlatestVersion(selectedDocument).approvalDate
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
               <div>
@@ -163,9 +187,7 @@ const NewDocumentDialog = ({
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Created By:</span>
-                      <span className="text-white">
-                        {selectedDocument.createdBy}
-                      </span>
+                      <span className="text-white">{creator}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Created Date:</span>
@@ -177,9 +199,7 @@ const NewDocumentDialog = ({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Current Version:</span>
-                      <span className="text-white">
-                        v{selectedDocument.versions[0].version}
-                      </span>
+                      <span className="text-white">v {currentVersion}</span>
                     </div>
                   </div>
                 </div>
@@ -191,47 +211,61 @@ const NewDocumentDialog = ({
                 Version History
               </h3>
               <div className="space-y-3">
-                {selectedDocument.versions.map((version, index) => (
-                  <div key={version.id} className="p-3 bg-gray-700 rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        <FileText className="h-4 w-4 mr-2 text-gray-400" />
-                        <span className="font-medium text-white">
-                          Version {version.version}
-                        </span>
-                        {index === 0 && (
-                          <Badge className="ml-2 bg-blue-600 text-white text-xs">
-                            Latest
-                          </Badge>
-                        )}
+                {selectedDocument.versions.map(
+                  (version: any, index: number) => (
+                    <div
+                      key={version._id}
+                      className="p-3 bg-gray-700 rounded-md"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 mr-2 text-gray-400" />
+                          <span className="font-medium text-white">
+                            Version {version.version}
+                          </span>
+                          {version === getlatestVersion(selectedDocument) && (
+                            <Badge className="ml-2 bg-blue-600 text-white text-xs">
+                              Latest
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-400 hover:text-blue-300"
+                          onClick={() => {
+                            try {
+                              window.open(version.file);
+                            } catch {
+                              alert("Unable to download!");
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <p className="text-xs text-gray-400 mb-1">
+                        Uploaded on{" "}
+                        {new Date(version.uploadDate).toLocaleDateString()} by{" "}
+                        {getUsername(version.uploadedBy)}
+                      </p>
+                      <p className="text-sm text-gray-300 mb-2">
+                        {version.changes}
+                      </p>
+                      {version.approvalDate && (
+                        <div className="flex items-center text-xs text-green-400">
+                          <span>
+                            Approved on{" "}
+                            {new Date(
+                              version.approvalDate
+                            ).toLocaleDateString()}{" "}
+                            by {version.approvedBy}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-400 mb-1">
-                      Uploaded on{" "}
-                      {new Date(version.uploadDate).toLocaleDateString()} by{" "}
-                      {version.uploadedBy}
-                    </p>
-                    <p className="text-sm text-gray-300 mb-2">
-                      {version.changes}
-                    </p>
-                    {version.approvalDate && (
-                      <div className="flex items-center text-xs text-green-400">
-                        <span>
-                          Approved on{" "}
-                          {new Date(version.approvalDate).toLocaleDateString()}{" "}
-                          by {version.approvedBy}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </div>
 
@@ -239,6 +273,13 @@ const NewDocumentDialog = ({
               <Button
                 variant="outline"
                 className="border-gray-600 text-gray-300"
+                onClick={() => {
+                  try {
+                    window.open(getlatestVersion(selectedDocument).file);
+                  } catch {
+                    alert("Unable to download!!");
+                  }
+                }}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download Latest
@@ -256,4 +297,4 @@ const NewDocumentDialog = ({
   );
 };
 
-export default NewDocumentDialog;
+export default DocumentDetailsDialog;

@@ -72,6 +72,8 @@ const useapi = () => {
   const getAllUsersdata = async () => await crud("/api/allusers", "GET");
   const createUser = async (data: {}) =>
     await crud("/api/allusers", "POST", data);
+  const updateUser = async (data: {}) =>
+    await crud("/api/allusers", "PATCH", data);
   const deleteUser = async (data: {}) =>
     await crud("/api/allusers", "DELETE", data);
 
@@ -108,12 +110,28 @@ const useapi = () => {
   const updateSop = async (data: {}) => await crud("/api/sop", "PUT", data);
   const deleteSop = async (data: {}) => await crud("/api/sop", "DELETE", data);
 
+  const createVersion = async (data: {}) =>
+    await crud("/api/sop/version", "POST", data);
+  const updateVersion = async (data: {}) =>
+    await crud("/api/sop/version", "PUT", data);
+  const deleteVersion = async (data: {}) =>
+    await crud("/api/sop/version", "DELETE", data);
+
+  const getSubmission = async () => await crud("/api/submission", "GET");
+  const createSubmission = async (data: {}) =>
+    await crud("/api/submission", "POST", data);
+  const updateSubmission = async (data: {}) =>
+    await crud("/api/submission", "PATCH", data);
+  const deleteSubmission = async (data: {}) =>
+    await crud("/api/submission", "DELETE", data);
+
   return {
     login,
     logout,
     getUserdata,
     getAllUsersdata,
     createUser,
+    updateUser,
     deleteUser,
 
     getDepartments,
@@ -139,6 +157,15 @@ const useapi = () => {
     createSop,
     updateSop,
     deleteSop,
+
+    createVersion,
+    updateVersion,
+    deleteVersion,
+
+    getSubmission,
+    updateSubmission,
+    createSubmission,
+    deleteSubmission,
   };
 };
 

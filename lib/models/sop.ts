@@ -1,31 +1,27 @@
-import mongoose, { Schema, models, model, Document } from "mongoose";
+import mongoose, { Schema, models, model, Document, Types } from "mongoose";
 
 export interface ISOP extends Document {
   title: "";
   documentNumber: "";
   type: "Policy" | "SOP";
   category: "";
-  department: "";
+  department: Types.ObjectId;
   description: "";
-  status: "";
-  createdBy: "";
+  createdBy: Types.ObjectId;
   createdDate: "";
   reviewFrequency: "";
-  nextReviewDate: "";
 }
 
 const SOPSchema = new Schema<ISOP>({
-  title: { type: String, unique: true },
-  documentNumber: { type: String, unique: true },
-  type: { type: String, unique: true },
-  category: { type: String, unique: true },
-  department: { type: String, unique: true },
-  description: { type: String, unique: true },
-  status: { type: String, unique: true },
-  createdBy: { type: String, unique: true },
-  createdDate: { type: String, unique: true },
-  reviewFrequency: { type: String, unique: true },
-  nextReviewDate: { type: String, unique: true },
+  title: { type: String },
+  documentNumber: { type: String },
+  type: { type: String },
+  category: { type: String },
+  department: { type: Schema.ObjectId, ref: "Department" },
+  description: { type: String },
+  createdBy: { type: Schema.ObjectId, ref: "User" },
+  createdDate: { type: String },
+  reviewFrequency: { type: String },
 });
 
 const SOP = models.SOP || model<ISOP>("SOP", SOPSchema);

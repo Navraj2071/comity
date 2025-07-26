@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header";
+import { Header } from "@/components/header/header";
 import {
   Search,
   FileText,
@@ -46,37 +46,70 @@ import {
 } from "lucide-react";
 import { getRBIObservations, updateRBIObservation } from "@/lib/storage";
 import useStore from "@/lib/store/useStore";
+import ViewPopup from "../submissions/viewdialog";
+import { getSomeValueWithId } from "@/lib/tools";
+
+import useapi from "../api/api";
 
 export default function ReviewsPage() {
   const store = useStore();
   const user = store?.db?.user;
+  const allUsers = store?.db?.allUsers || [];
   const checkpoints = store?.db?.checkpoints;
+  const submittedSubmissions = store?.db?.submissions;
 
   const reviews = [];
 
-  checkpoints?.map((cpoint) => {
-    cpoint.subCheckpoints.map((subpoint) => {
-      reviews.push({
-        id: subpoint._id,
-        checkpointId: cpoint._id,
-        subCheckpointId: subpoint._id,
-        checkpointTitle: cpoint?.title,
-        subCheckpointTitle: subpoint?.title,
-        letterNumber: cpoint?.letterNumber,
-        regulatory: cpoint?.regulatory,
-        assignedTo: subpoint?.assignedTo,
-        deadline: subpoint?.deadline,
-        status: subpoint?.status,
-        submittedBy: "",
-        submittedDate: "",
-        remarks: "",
-        attachments: subpoint?.attachments || [],
-        expectedClosureDate: null,
-        type: cpoint.type,
-        financialYear: cpoint.financialYear,
+  if (checkpoints) {
+    checkpoints?.map((cpoint: any) => {
+      cpoint.subCheckpoints.map((subpoint: any) => {
+        let status = "pending";
+        let attachments = [];
+        let expectedClosuredate = "";
+        let createdAt = "";
+        let assignedTo = "";
+        let submissionId = "";
+        let submittedBy = "";
+        let remarks = "";
+
+        submittedSubmissions?.map((submitted: any) => {
+          if (submitted.subCheckpoint === subpoint._id) {
+            status = submitted.status;
+            attachments = submitted.attachments;
+            expectedClosuredate = submitted.expectedClosuredate;
+            createdAt = submitted.createdAt;
+            assignedTo = submitted.assignedTo;
+            submissionId = submitted.id;
+            submittedBy = submitted.submittedBy;
+            remarks = submitted.remarks;
+          }
+        });
+        reviews.push({
+          id: subpoint._id,
+          checkpointId: cpoint._id,
+          subCheckpointId: subpoint._id,
+          checkpointTitle: cpoint?.title,
+          subCheckpointTitle: subpoint?.title,
+          letterNumber: cpoint?.letterNumber,
+          regulatory: cpoint?.regulatory,
+          deadline: subpoint?.deadline,
+          type: cpoint.type,
+          financialYear: cpoint.financialYear,
+          isRemarksRequired: subpoint.isRemarksRequired,
+          isAttachmentRequired: subpoint.isAttachmentRequired,
+          responseTemplate: subpoint.responseTemplate,
+          status: status,
+          attachments,
+          expectedClosuredate,
+          createdAt,
+          assignedTo,
+          submissionId,
+          submittedBy,
+          remarks,
+        });
       });
     });
-  });
+  }
 
   const [rbiAuditReviews, setRbiAuditReviews] = useState([]);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -90,7 +123,14 @@ export default function ReviewsPage() {
   const [activeTab, setActiveTab] = useState("checkpoints");
   const [selectedFinancialYear, setSelectedFinancialYear] =
     useState("2023-2024");
-  const financialYears = ["2021-2022", "2022-2023", "2023-2024", "2024-2025"];
+  const financialYears = [
+    "2021-2022",
+    "2022-2023",
+    "2023-2024",
+    "2024-2025",
+    "2025-2026",
+  ];
+  const [isViewSubmission, setIsViewSubmission] = useState(false);
 
   useEffect(() => {
     // Load RBI audit reviews
@@ -138,9 +178,9 @@ export default function ReviewsPage() {
     let filtered = reviews;
 
     // Filter by financial year
-    filtered = filtered.filter(
-      (rev) => rev.financialYear === selectedFinancialYear
-    );
+    // filtered = filtered.filter(
+    //   (rev) => rev.financialYear === selectedFinancialYear
+    // );
 
     // Filter by search term
     if (searchTerm) {
@@ -382,7 +422,11 @@ export default function ReviewsPage() {
                             {review.regulatory}
                           </TableCell>
                           <TableCell className="text-gray-300">
-                            {review.submittedBy}
+                            {getSomeValueWithId(
+                              "name",
+                              allUsers,
+                              review.submittedBy
+                            )}
                           </TableCell>
                           <TableCell className="text-gray-300">
                             {new Date(
@@ -411,6 +455,10 @@ export default function ReviewsPage() {
                             {review.status !== "pending_review" && (
                               <Button
                                 variant="outline"
+                                onClick={() => {
+                                  setIsViewSubmission(true);
+                                  setSelectedReview(review);
+                                }}
                                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
                               >
                                 View
@@ -541,6 +589,13 @@ export default function ReviewsPage() {
         setShowReviewDialog={setShowReviewDialog}
         activeTab={activeTab}
         selectedReview={selectedReview}
+        store={store}
+      />
+      <ViewPopup
+        isViewSubmission={isViewSubmission}
+        setIsViewSubmission={setIsViewSubmission}
+        selectedSubmission={selectedReview}
+        store={store}
       />
     </main>
   );
@@ -551,7 +606,21 @@ const ReviewDialog = ({
   setShowReviewDialog,
   activeTab,
   selectedReview,
+  store,
 }: any) => {
+  const api = useapi();
+  const handleSubmit = async () => {
+    api
+      .updateSubmission({ status: "submitted" })
+      .then((res) => {
+        console.log(res);
+        setShowReviewDialog(false);
+        store.update("submissions");
+      })
+      .catch((err) => {
+        alert("Unable to change status");
+      });
+  };
   return (
     <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
       <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white">
@@ -567,7 +636,7 @@ const ReviewDialog = ({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleReview(new FormData(e.currentTarget));
+              handleSubmit();
             }}
             className="space-y-4"
           >
@@ -591,7 +660,11 @@ const ReviewDialog = ({
               <Label className="text-gray-400">Submitted By</Label>
               <p className="text-white">
                 {activeTab === "checkpoints"
-                  ? selectedReview.submittedBy
+                  ? getSomeValueWithId(
+                      "name",
+                      store?.db?.allUsers || [],
+                      selectedReview.submittedBy
+                    )
                   : selectedReview.assignedTo}
               </p>
             </div>
@@ -635,6 +708,7 @@ const ReviewDialog = ({
                       <div
                         key={index}
                         className="flex items-center gap-2 text-blue-400"
+                        onClick={() => window.open(file)}
                       >
                         <FileText className="h-4 w-4" />
                         <span>{file}</span>
@@ -717,6 +791,7 @@ const ReviewDialog = ({
               <Button
                 type="submit"
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                onClick={handleSubmit}
               >
                 Submit Review
               </Button>

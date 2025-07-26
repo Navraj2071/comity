@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.log("Login error:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred.", error: error.message },
       { status: 500 }

@@ -1,21 +1,17 @@
-import mongoose, { Schema, models, model, Document } from "mongoose";
+import mongoose, { Schema, models, model, Document, Types } from "mongoose";
 
 export interface IDepartment extends Document {
   name: string;
-  head: string;
-  spoc: string;
-  userCount: number;
-  activeCheckpoints: number;
+  head: Types.ObjectId;
+  spoc: Types.ObjectId;
   createdAt: Date;
 }
 
 const DepartmentSchema = new Schema<IDepartment>(
   {
     name: { type: String, unique: true },
-    head: { type: String },
-    spoc: { type: String },
-    userCount: { type: Number, default: 2 },
-    activeCheckpoints: { type: Number, default: 0 },
+    head: { type: Schema.ObjectId, ref: "User" },
+    spoc: { type: Schema.ObjectId, ref: "User" },
   },
   {
     timestamps: true,

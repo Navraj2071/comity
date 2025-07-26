@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       criticality,
       spoc,
       description,
-      createdBy: user.name,
+      createdBy: user._id,
     });
 
     return NextResponse.json(

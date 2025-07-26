@@ -60,6 +60,8 @@ export async function POST(request: Request) {
   try {
     const newSop = await SOP.create({
       ...data,
+      createdBy: user._id,
+      createdDate: new Date(),
     });
 
     await Promise.all(
@@ -67,22 +69,26 @@ export async function POST(request: Request) {
         await SOPVersion.create({
           sop: newSop._id,
           ...version,
+          uploadDate: new Date(),
+          uploadedBy: user._id,
+          reviewStatus: "pending",
+          approvalStatus: "pending",
         });
       })
     );
 
     return NextResponse.json(
       {
-        message: "Checkpoint created successfully",
-        checkpoint: newSop,
+        message: "Document created successfully",
+        sop: newSop,
       },
       { status: 201 }
     );
   } catch (error: any) {
-    console.log("Checkpoint create error:", error);
+    console.log("Document create error:", error);
 
     return NextResponse.json(
-      { message: "Checkpoint create error: ", error: error },
+      { message: "Document create error: ", error: error },
       { status: 500 }
     );
   }

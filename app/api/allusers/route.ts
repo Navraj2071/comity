@@ -67,10 +67,10 @@ export async function POST(request: Request) {
     const userWithoutPassword = newUser.toObject();
     delete userWithoutPassword.password;
 
-    await Department.findOneAndUpdate(
-      { name: department },
-      { $inc: { userCount: 1 } }
-    );
+    // await Department.findOneAndUpdate(
+    //   { name: department },
+    //   { $inc: { userCount: 1 } }
+    // );
 
     return NextResponse.json(
       { message: "User registered successfully", user: userWithoutPassword },
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
 
@@ -112,28 +112,14 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { _id, password, email, refreshToken, ...updates } = body;
+    const { _id, email, refreshToken, ...updates } = body;
     const user = await User.findByIdAndUpdate(
       _id,
       { $set: updates },
       { new: false, runValidators: true }
     ).select("-password -refreshToken");
 
-    if (updates.department && updates.department !== user.department) {
-      await Department.findOneAndUpdate(
-        { name: user.department },
-        { $inc: { userCount: -1 } }
-      );
-      await Department.findOneAndUpdate(
-        { name: updates.department },
-        { $inc: { userCount: 1 } }
-      );
-    }
-
-    return NextResponse.json(
-      { message: "User updated successfully" },
-      { status: 204 }
-    );
+    return NextResponse.json({ message: "User updated successfully" });
   } catch (error: any) {
     console.error("Update error:", error);
 
@@ -166,13 +152,12 @@ export async function DELETE(request: Request) {
   try {
     const { _id } = await request.json();
     const user = await User.findByIdAndDelete(_id);
-    await Department.findOneAndUpdate(
-      { name: user.department },
-      { $inc: { userCount: -1 } }
-    );
-    return NextResponse.json({ message: "Account deleted successfully" });
+    return NextResponse.json({
+      message: "User deleted successfully",
+      user: user,
+    });
   } catch (error) {
-    console.error("Update error:", error);
+    console.error("Delete error:", error);
 
     return NextResponse.json(
       { message: "User delete error: ", error: error },
