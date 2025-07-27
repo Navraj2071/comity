@@ -9,6 +9,7 @@ export interface ISubmission extends Document {
   expectedClosureDate: "";
   submittedBy: Types.ObjectId;
   createdAt: Date;
+  comments: "";
 }
 
 const SubmissionSchema = new Schema<ISubmission>(
@@ -27,6 +28,7 @@ const SubmissionSchema = new Schema<ISubmission>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    comments: { type: String },
   },
   {
     timestamps: true,

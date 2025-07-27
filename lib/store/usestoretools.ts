@@ -65,6 +65,21 @@ const usestoretools = (db: any) => {
     });
     return name;
   };
+
+  const getlatestSopVersion = (sop: any) => {
+    let latest = {};
+    sop?.versions?.map((version: any) => {
+      if (latest.createdAt) {
+        if (new Date(version.createdAt) > new Date(latest.createdAt)) {
+          latest = version;
+        }
+      } else {
+        latest = version;
+      }
+    });
+    return latest;
+  };
+
   return {
     getUserDepartment,
     getDepartmentUserCount,
@@ -72,6 +87,7 @@ const usestoretools = (db: any) => {
     getDepartmentNameFromId,
     getRegBodyNameFromId,
     getSubCheckpointStatus,
+    getlatestSopVersion,
   };
 };
 

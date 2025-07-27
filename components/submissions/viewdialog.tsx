@@ -1,9 +1,3 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, FileText, Trash2, Download } from "lucide-react";
-import { updateSubCheckpoint, getRBIObservations } from "@/lib/storage";
-import useapi from "../api/api";
-import { Alert, AlertDescription } from "../ui/alert";
-import { AlertCircle } from "lucide-react";
-import { ClipLoader } from "react-spinners";
+import { Download } from "lucide-react";
 
 const ViewPopup = ({
   isViewSubmission,
@@ -38,6 +27,9 @@ const ViewPopup = ({
       selectedSubmission?.createdAt
     ).toLocaleDateString()}`,
     "assigned To": selectedSubmission?.assignedTo,
+    "submitted By": selectedSubmission?.submittedBy,
+    remarks: selectedSubmission?.remarks,
+    status: selectedSubmission?.status,
   };
 
   const submittedFiles = selectedSubmission?.attachments;
@@ -46,10 +38,12 @@ const ViewPopup = ({
     return (
       <div className="flex gap-2">
         {files.map((file: string) => (
-          <Download
+          <div
             key={`download-file-${file}`}
-            onClick={() => window.open(file)}
-          />
+            className="p-2 bg-gray-600 hover:bg-black"
+          >
+            <Download onClick={() => window.open(file)} />
+          </div>
         ))}
       </div>
     );
@@ -60,9 +54,6 @@ const ViewPopup = ({
       <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
           <DialogTitle>Submission Details</DialogTitle>
-          {/* <DialogDescription className="text-gray-400">
-            Submission Details
-          </DialogDescription> */}
         </DialogHeader>
         {selectedSubmission && (
           <div className="m-1">

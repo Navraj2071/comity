@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,18 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   FileText,
@@ -35,57 +23,14 @@ import useStore from "@/lib/store/useStore";
 import SubmissionPopup from "./submitdialog";
 import ViewPopup from "./viewdialog";
 import AssignPopup from "./assigndialog";
+import Checkpointsview from "./checkpointsview";
+import Rbiauditview from "./rbiauditview";
 
 export default function SubmissionsPage() {
   const store = useStore();
-  const checkpoints = store?.db?.checkpoints;
-  const submittedSubmissions = store?.db?.submissions;
-  const submissions = [];
 
-  if (checkpoints) {
-    checkpoints?.map((cpoint: any) => {
-      cpoint.subCheckpoints.map((subpoint: any) => {
-        let status = "pending";
-        let attachments = [];
-        let expectedClosuredate = "";
-        let createdAt = "";
-        let assignedTo = "";
-        let submissionId: "";
-
-        submittedSubmissions?.map((submitted: any) => {
-          if (submitted.subCheckpoint === subpoint._id) {
-            status = submitted.status;
-            attachments = submitted.attachments;
-            expectedClosuredate = submitted.expectedClosuredate;
-            createdAt = submitted.createdAt;
-            assignedTo = submitted.assignedTo;
-            submissionId = submitted.id;
-          }
-        });
-        submissions.push({
-          id: subpoint._id,
-          checkpointId: cpoint._id,
-          subCheckpointId: subpoint._id,
-          checkpointTitle: cpoint?.title,
-          subCheckpointTitle: subpoint?.title,
-          letterNumber: cpoint?.letterNumber,
-          regulatory: cpoint?.regulatory,
-          deadline: subpoint?.deadline,
-          type: cpoint.type,
-          financialYear: cpoint.financialYear,
-          isRemarksRequired: subpoint.isRemarksRequired,
-          isAttachmentRequired: subpoint.isAttachmentRequired,
-          responseTemplate: subpoint.responseTemplate,
-          status: status,
-          attachments,
-          expectedClosuredate,
-          createdAt,
-          assignedTo,
-          submissionId,
-        });
-      });
-    });
-  }
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [financialYears, setFinancialYears] = useState<any[]>([]);
 
   const [rbiAuditSubmissions, setRbiAuditSubmissions] = useState([]);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -96,19 +41,92 @@ export default function SubmissionsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [periodFilter, setPeriodsFilter] = useState("all");
-  const [filteredSubmissions, setFilteredSubmissions] = useState([]);
   const [filteredRbiAuditSubmissions, setFilteredRbiAuditSubmissions] =
     useState([]);
   const [activeTab, setActiveTab] = useState("checkpoints");
-  const [selectedFinancialYear, setSelectedFinancialYear] =
-    useState("2023-2024");
-  const financialYears = [
-    "2021-2022",
-    "2022-2023",
-    "2023-2024",
-    "2024-2025",
-    "2025-2026",
-  ];
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState("all");
+
+  const poppulateSubmissions = () => {
+    const checkpoints = store?.db?.checkpoints;
+    const submittedSubmissions = store?.db?.submissions;
+
+    let submissionData = [];
+    let yearsData = [];
+
+    if (checkpoints) {
+      checkpoints?.map((cpoint: any) => {
+        cpoint.subCheckpoints.map((subpoint: any) => {
+          let status = "pending";
+          let attachments = [];
+          let expectedClosuredate = "";
+          let createdAt = "";
+          let assignedTo = "";
+          let submissionId: "";
+          let remarks = "";
+          let expectedClosureDate = "";
+          let submittedBy = "";
+
+          submittedSubmissions?.map((submitted: any) => {
+            if (submitted.subCheckpoint === subpoint._id) {
+              status = submitted.status;
+              attachments = submitted.attachments;
+              expectedClosuredate = submitted.expectedClosuredate;
+              createdAt = submitted.createdAt;
+              assignedTo = submitted.assignedTo;
+              submissionId = submitted.id;
+              remarks = submitted.remarks;
+              expectedClosureDate = submitted.expectedClosureDate;
+              submittedBy = store?.tools?.getUserNameFromId(
+                submitted.submittedBy
+              );
+            }
+          });
+
+          submissionData.push({
+            id: subpoint._id,
+            checkpointId: cpoint._id,
+            subCheckpointId: subpoint._id,
+            checkpointTitle: cpoint?.title,
+            subCheckpointTitle: subpoint?.title,
+            letterNumber: cpoint?.letterNumber,
+            regulatory: store?.tools?.getRegBodyNameFromId(cpoint?.regulatory),
+            deadline: subpoint?.deadline,
+            type: cpoint.type,
+            financialYear: cpoint.financialYear,
+            isRemarksRequired: subpoint.isRemarksRequired,
+            isAttachmentRequired: subpoint.isAttachmentRequired,
+            responseTemplate: subpoint.responseTemplate,
+            frequency: cpoint?.frequency,
+            department: store?.tools?.getDepartmentNameFromId(
+              subpoint?.department
+            ),
+            status: status,
+            remarks: remarks,
+            attachments,
+            expectedClosuredate,
+            createdAt,
+            assignedTo,
+            submissionId,
+          });
+
+          if (
+            cpoint.financialYear &&
+            cpoint.type === "ad-hoc" &&
+            !yearsData.includes(cpoint.financialYear)
+          ) {
+            yearsData.push(cpoint.financialYear);
+          }
+
+          setSubmissions(submissionData);
+          setFinancialYears(yearsData);
+        });
+      });
+    }
+  };
+
+  useEffect(() => {
+    poppulateSubmissions();
+  }, [store.db.checkpoints, store.db.submissions]);
 
   //   useEffect(() => {
   //     const rbiObservations = getRBIObservations();
@@ -135,64 +153,9 @@ export default function SubmissionsPage() {
   //     setFilteredRbiAuditSubmissions(userAssignedObservations);
   //   }, [user.name]);
 
-  useEffect(() => {
-    filterSubmissions();
-  }, [
-    searchTerm,
-    statusFilter,
-    typeFilter,
-    periodFilter,
-    selectedFinancialYear,
-  ]);
-
   //   useEffect(() => {
   //     filterRbiAuditSubmissions();
   //   }, [rbiAuditSubmissions, searchTerm, statusFilter, selectedFinancialYear]);
-
-  const filterSubmissions = () => {
-    let filtered = [...submissions];
-
-    // Filter by financial year
-    // filtered = filtered.filter(
-    //   (sub) => sub.financialYear === selectedFinancialYear
-    // );
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (sub) =>
-          sub.checkpointTitle
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          sub.subCheckpointTitle
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          sub.letterNumber.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by status
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.status === statusFilter);
-    }
-
-    // Filter by type
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((sub) => sub.type === typeFilter);
-    }
-
-    // Filter by period (for recurring checkpoints)
-    // if (periodFilter !== "all") {
-    //   filtered = filtered.filter(
-    //     (sub) => sub.period === periodFilter || !sub.period
-    //   );
-    // }
-
-    // Filter to show only submissions assigned to the current user
-    // filtered = filtered.filter((sub) => sub.assignedTo === user.name);
-
-    setFilteredSubmissions(filtered);
-  };
 
   const filterRbiAuditSubmissions = () => {
     let filtered = rbiAuditSubmissions;
@@ -227,32 +190,7 @@ export default function SubmissionsPage() {
     setFilteredRbiAuditSubmissions(filtered);
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "pending":
-        return <Badge className="bg-blue-500">Pending</Badge>;
-      case "submitted":
-        return <Badge className="bg-green-500">Submitted</Badge>;
-      case "pending_review":
-        return <Badge className="bg-green-500">Pending Review</Badge>;
-      case "overdue":
-        return <Badge className="bg-red-500">Overdue</Badge>;
-      case "Open":
-        return <Badge className="bg-blue-500">Open</Badge>;
-      case "In Progress":
-        return <Badge className="bg-yellow-500">In Progress</Badge>;
-      case "Pending Closure":
-        return <Badge className="bg-orange-500">Pending Closure</Badge>;
-      case "Closed":
-        return <Badge className="bg-green-500">Closed</Badge>;
-      case "Overdue":
-        return <Badge className="bg-red-500">Overdue</Badge>;
-      default:
-        return <Badge className="bg-gray-500">{status}</Badge>;
-    }
-  };
-
-  const getRbiCategoryIcon = (category) => {
+  const getRbiCategoryIcon = (category: string) => {
     switch (category) {
       case "RMP":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
@@ -267,6 +205,14 @@ export default function SubmissionsPage() {
     }
   };
 
+  const getFinancialYear = () => {
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    const nextYear = (thisYear + 1).toString();
+    return `${thisYear}-${nextYear[2]}${nextYear[3]}`;
+  };
+  const finyear = getFinancialYear();
+
   return (
     <main className="flex-1 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -277,24 +223,27 @@ export default function SubmissionsPage() {
               Submit compliance evidence for assigned checkpoints
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-gray-400 text-sm">Financial Year:</Label>
-            <Select
-              value={selectedFinancialYear}
-              onValueChange={setSelectedFinancialYear}
-            >
-              <SelectTrigger className="w-40 bg-gray-800 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                {financialYears.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {typeFilter !== "recurring" && (
+            <div className="flex items-center gap-2">
+              <Label className="text-gray-400 text-sm">Financial Year:</Label>
+              <Select
+                value={selectedFinancialYear}
+                onValueChange={setSelectedFinancialYear}
+              >
+                <SelectTrigger className="w-40 bg-gray-800 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value={"all"}>All</SelectItem>
+                  {financialYears?.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <Tabs
@@ -318,7 +267,7 @@ export default function SubmissionsPage() {
           </TabsList>
 
           <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 overflow-scroll max-h-[70vh] overflow-y-scroll">
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex-1 min-w-64">
                   <div className="relative">
@@ -363,228 +312,30 @@ export default function SubmissionsPage() {
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
                         <SelectItem value="all">All Periods</SelectItem>
-                        <SelectItem value="Q1 2023-24">Q1 2023-24</SelectItem>
-                        <SelectItem value="Q2 2023-24">Q2 2023-24</SelectItem>
-                        <SelectItem value="Q3 2023-24">Q3 2023-24</SelectItem>
-                        <SelectItem value="Q4 2023-24">Q4 2023-24</SelectItem>
+                        <SelectItem value="Q1">Q1 {finyear}</SelectItem>
+                        <SelectItem value="Q2">Q2 {finyear}</SelectItem>
+                        <SelectItem value="Q3">Q3 {finyear}</SelectItem>
+                        <SelectItem value="Q4">Q4 {finyear}</SelectItem>
                       </SelectContent>
                     </Select>
                   </>
                 )}
               </div>
 
-              <TabsContent value="checkpoints" className="mt-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-700 hover:bg-gray-800">
-                      <TableHead className="text-gray-400">
-                        Checkpoint
-                      </TableHead>
-                      <TableHead className="text-gray-400">
-                        Sub-Checkpoint
-                      </TableHead>
-                      <TableHead className="text-gray-400">
-                        Letter No.
-                      </TableHead>
-                      <TableHead className="text-gray-400">
-                        Regulatory
-                      </TableHead>
-                      <TableHead className="text-gray-400">Deadline</TableHead>
-                      <TableHead className="text-gray-400">Status</TableHead>
-                      <TableHead className="text-gray-400">Type</TableHead>
-                      <TableHead className="text-gray-400">Period</TableHead>
-                      <TableHead className="text-gray-400 text-right">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSubmissions.length > 0 ? (
-                      filteredSubmissions.map((submission) => (
-                        <TableRow
-                          key={submission.id}
-                          className="border-gray-700 hover:bg-gray-800"
-                        >
-                          <TableCell className="text-white">
-                            {submission.checkpointTitle}
-                          </TableCell>
-                          <TableCell className="text-white">
-                            {submission.subCheckpointTitle}
-                          </TableCell>
-                          <TableCell className="text-gray-300 font-mono">
-                            {submission.letterNumber}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {submission.regulatory}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {new Date(submission.deadline).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(submission.status)}
-                          </TableCell>
-                          <TableCell className="text-gray-300 capitalize">
-                            {submission.type}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {submission.period || "N/A"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {submission.status !== "submitted" &&
-                              submission.status !== "pending_review" && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setSelectedSubmission(submission);
-                                      setShowSubmitDialog(true);
-                                    }}
-                                    className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                                  >
-                                    Submit
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      setSelectedSubmission(submission);
-                                      setIsAssignDialog(true);
-                                    }}
-                                    className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                                  >
-                                    Assign
-                                  </Button>
-                                </div>
-                              )}
-                            {submission.status !== "pending" && (
-                              <Button
-                                variant="outline"
-                                className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                                onClick={() => {
-                                  setSelectedSubmission(submission);
-                                  setIsViewSubmission(true);
-                                }}
-                              >
-                                View
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow className="border-gray-700">
-                        <TableCell
-                          colSpan={9}
-                          className="text-center text-gray-400 py-8"
-                        >
-                          No submissions found matching your filters
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-
-              <TabsContent value="rbi-audit" className="mt-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-700 hover:bg-gray-800">
-                      <TableHead className="text-gray-400">
-                        Observation No.
-                      </TableHead>
-                      <TableHead className="text-gray-400">Title</TableHead>
-                      <TableHead className="text-gray-400">Category</TableHead>
-                      <TableHead className="text-gray-400">Severity</TableHead>
-                      <TableHead className="text-gray-400">
-                        Target Date
-                      </TableHead>
-                      <TableHead className="text-gray-400">Status</TableHead>
-                      <TableHead className="text-gray-400">Progress</TableHead>
-                      <TableHead className="text-gray-400 text-right">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRbiAuditSubmissions.length > 0 ? (
-                      filteredRbiAuditSubmissions.map((submission) => (
-                        <TableRow
-                          key={submission.id}
-                          className="border-gray-700 hover:bg-gray-800"
-                        >
-                          <TableCell className="text-white font-mono">
-                            {submission.observationNumber}
-                          </TableCell>
-                          <TableCell className="text-white">
-                            {submission.title}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            <div className="flex items-center gap-1">
-                              {getRbiCategoryIcon(submission.auditCategory)}
-                              <span>{submission.auditCategory}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={`${
-                                submission.severity === "Critical"
-                                  ? "bg-red-500"
-                                  : submission.severity === "High"
-                                  ? "bg-orange-500"
-                                  : submission.severity === "Medium"
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                              }`}
-                            >
-                              {submission.severity}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {new Date(
-                              submission.targetDate
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(submission.status)}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {submission.progress}%
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {submission.status !== "Pending Closure" &&
-                              submission.status !== "Closed" && (
-                                <Button
-                                  onClick={() => {
-                                    setSelectedSubmission(submission);
-                                    setShowSubmitDialog(true);
-                                  }}
-                                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                                >
-                                  Submit
-                                </Button>
-                              )}
-                            {(submission.status === "Pending Closure" ||
-                              submission.status === "Closed") && (
-                              <Button
-                                variant="outline"
-                                className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                              >
-                                View
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow className="border-gray-700">
-                        <TableCell
-                          colSpan={8}
-                          className="text-center text-gray-400 py-8"
-                        >
-                          No RBI audit submissions found matching your filters
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TabsContent>
+              <Checkpointsview
+                submissions={submissions}
+                searchTerm={searchTerm}
+                statusFilter={statusFilter}
+                typeFilter={typeFilter}
+                periodFilter={periodFilter}
+                selectedFinancialYear={selectedFinancialYear}
+                setSelectedSubmission={setSelectedSubmission}
+                setShowSubmitDialog={setShowSubmitDialog}
+                setIsAssignDialog={setIsAssignDialog}
+                setIsViewSubmission={setIsViewSubmission}
+                store={store}
+              />
+              {/* <Rbiauditview /> */}
             </CardContent>
           </Card>
         </Tabs>

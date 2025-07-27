@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import useapi from "@/components/api/api";
 import { getFinancialYears } from "@/lib/storage";
-import { getSomeValueWithId } from "@/lib/tools";
+import { getSomeValueWithId, getNextDeadline } from "@/lib/tools";
 
 const usecreate = (store: any, setIsCreateDialogOpen: any) => {
   const api = useapi();
@@ -205,25 +205,7 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
 
   const getUpcomingDeadline = () => {
     const frequency = checkpointForm.frequency;
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    let deadline = now;
-
-    if (frequency === "monthly") {
-      deadline = new Date(year, month + 1, 0);
-    }
-    if (frequency === "quarterly") {
-      if (month <= 2) deadline = new Date(year, 3, 0);
-      else if (month <= 5) deadline = new Date(year, 6, 0);
-      else if (month <= 8) deadline = new Date(year, 9, 0);
-      else deadline = new Date(year + 1, 1, 0);
-    }
-    if (frequency === "half-yearly") {
-      if (month <= 5) deadline = new Date(year, 6, 0);
-      else deadline = new Date(year, 11, 31);
-    }
-    if (frequency === "annually") deadline = new Date(year, 11, 31);
+    const deadline = getNextDeadline(frequency);
 
     return `${deadline.toLocaleDateString()}, recurring ${frequency}`;
   };

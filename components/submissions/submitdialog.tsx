@@ -18,6 +18,7 @@ import useapi from "../api/api";
 import { Alert, AlertDescription } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ClipLoader } from "react-spinners";
+import { getNextDeadline } from "@/lib/tools";
 
 const SubmissionPopup = ({
   showSubmitDialog,
@@ -36,6 +37,14 @@ const SubmissionPopup = ({
     attachments: [],
     expectedClosureDate: "",
   });
+
+  useEffect(() => {
+    setFormdata({
+      remarks: "",
+      attachments: [],
+      expectedClosureDate: "",
+    });
+  }, [selectedSubmission]);
 
   const handleSubmit = async () => {
     if (
@@ -65,6 +74,7 @@ const SubmissionPopup = ({
     apiData.attachments = files;
     apiData.status = "pending_review";
     apiData.subCheckpoint = selectedSubmission.subCheckpointId;
+
     await api
       .createSubmission(apiData)
       .then((res) => {
@@ -92,8 +102,8 @@ const SubmissionPopup = ({
     updateSubCheckpoint(selectedSubmission.id, updates);
 
     // Update local state
-    setRbiAuditSubmissions((prev) =>
-      prev.map((sub) =>
+    setRbiAuditSubmissions((prev: any) =>
+      prev.map((sub: any) =>
         sub.id === selectedSubmission.id ? { ...sub, ...updates } : sub
       )
     );
@@ -125,6 +135,7 @@ const SubmissionPopup = ({
       input.click();
     } catch {}
   };
+
   return (
     <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
       <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-scroll">
@@ -152,15 +163,51 @@ const SubmissionPopup = ({
               <Label className="text-gray-400">
                 {activeTab === "checkpoints" ? "Checkpoint" : "Observation"}
               </Label>
-              <p className="text-white font-medium">
-                {activeTab === "checkpoints"
-                  ? selectedSubmission.checkpointTitle
-                  : selectedSubmission.title}
+              <div className="text-white text-xl">
+                {activeTab === "checkpoints" ? (
+                  <div className="flex gap-2 items-center">
+                    <div className="text-white text-xs bg-red-500 rounded-full p-2">
+                      {selectedSubmission?.regulatory}
+                    </div>
+                    {selectedSubmission?.checkpointTitle}
+                    <div className="text-white text-xs bg-gray-500 rounded-full p-2">
+                      {selectedSubmission?.type}
+                    </div>
+                  </div>
+                ) : (
+                  selectedSubmission?.title
+                )}
+              </div>
+              <p className="text-gray-500 font-light text-sm">
+                {activeTab === "checkpoints" &&
+                  selectedSubmission?.letterNumber}
               </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {activeTab === "checkpoints"
-                  ? selectedSubmission.subCheckpointTitle
-                  : selectedSubmission.description}
+              <p className="text-gray-500 font-light text-sm"></p>
+              <div className="text-sm text-white mt-1">
+                {activeTab === "checkpoints" ? (
+                  <div className="flex gap-2">
+                    {selectedSubmission?.subCheckpointTitle} |
+                    <div className="text-gray-400">
+                      {selectedSubmission?.department}
+                    </div>
+                  </div>
+                ) : (
+                  selectedSubmission?.description
+                )}
+              </div>
+              <p className="text-gray-300 font-light text-sm">
+                {activeTab === "checkpoints" && (
+                  <>
+                    Deadline:{" "}
+                    {selectedSubmission?.type === "recurring"
+                      ? getNextDeadline(
+                          selectedSubmission?.frequency
+                        ).toLocaleDateString()
+                      : new Date(
+                          selectedSubmission?.deadline
+                        ).toLocaleDateString()}
+                  </>
+                )}
               </p>
             </div>
 
@@ -273,9 +320,9 @@ const SubmissionPopup = ({
                 >
                   <div className="flex items-center space-x-2">
                     <FileText className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm">{file.name}</span>
+                    <span className="text-sm">{file?.name}</span>
                     <span className="text-xs text-gray-400">
-                      ({(file.size / 1024).toFixed(1)} KB)
+                      ({(file?.size / 1024).toFixed(1)} KB)
                     </span>
                   </div>
                   <Button
@@ -308,6 +355,14 @@ const SubmissionPopup = ({
                 <Input
                   id="expectedClosureDate"
                   name="expectedClosureDate"
+                  value={formdata?.expectedClosureDate}
+                  onChange={(e) =>
+                    setFormdata((prev: any) => {
+                      let newdta = { ...prev };
+                      newdta.expectedClosureDate = e.target.value;
+                      return newdta;
+                    })
+                  }
                   type="date"
                   required
                   className="bg-gray-900 border-gray-600"

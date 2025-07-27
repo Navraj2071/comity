@@ -58,7 +58,6 @@ const CreateDocumentDialog = ({
   const [status, setStatus] = useState("");
 
   const handleCreateDocument = async () => {
-    console.log(newDocument);
     let isValid = true;
     Object.keys(newDocument).map((key) => {
       if (newDocument[key] === "") isValid = false;
@@ -171,7 +170,7 @@ const CreateDocumentDialog = ({
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <Select
-                value={newDocument.department}
+                value={newDocument?.department}
                 onValueChange={(value) =>
                   setNewDocument({ ...newDocument, department: value })
                 }
@@ -200,9 +199,10 @@ const CreateDocumentDialog = ({
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="Quarterly">Quarterly</SelectItem>
-                  <SelectItem value="Bi-annually">Bi-annually</SelectItem>
-                  <SelectItem value="Annually">Annually</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="half-yearly">Half-Yearly</SelectItem>
+                  <SelectItem value="annually">Annually</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -224,13 +224,18 @@ const CreateDocumentDialog = ({
                   <SelectValue placeholder="Select reviewer" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-700 border-gray-600">
-                  {users.map((user: any) => (
-                    <SelectItem value={user?._id} key={`reviewer-${user._id}`}>
-                      {user.name} from {user.department} {"("}
-                      {user.role}
-                      {")"}
-                    </SelectItem>
-                  ))}
+                  {users
+                    ?.filter(
+                      (user: any) => user.department === newDocument.department
+                    )
+                    .map((user: any) => (
+                      <SelectItem
+                        value={user?._id}
+                        key={`reviewer-${user._id}`}
+                      >
+                        {user.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -250,13 +255,18 @@ const CreateDocumentDialog = ({
                   <SelectValue placeholder="Select approver" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-700 border-gray-600">
-                  {users.map((user: any) => (
-                    <SelectItem value={user?._id} key={`approver-${user._id}`}>
-                      {user.name} from {user.department} {"("}
-                      {user.role}
-                      {")"}
-                    </SelectItem>
-                  ))}
+                  {users
+                    ?.filter(
+                      (user: any) => user.department === newDocument.department
+                    )
+                    .map((user: any) => (
+                      <SelectItem
+                        value={user?._id}
+                        key={`approver-${user._id}`}
+                      >
+                        {user.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -65,7 +65,6 @@ const useStore = () => {
   };
 
   const poppulateAllData = async () => {
-    console.log("pop data");
     setloading(true);
     await Promise.all(
       Object.keys(fetchFunctions).map(async (key) => {
