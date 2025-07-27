@@ -125,6 +125,14 @@ const useapi = () => {
   const deleteSubmission = async (data: {}) =>
     await crud("/api/submission", "DELETE", data);
 
+  const getObservation = async () => await crud("/api/observation", "GET");
+  const createObservation = async (data: {}) =>
+    await crud("/api/observation", "POST", data);
+  const updateObservation = async (data: {}) =>
+    await crud("/api/observation", "PATCH", data);
+  const deleteObservation = async (data: {}) =>
+    await crud("/api/observation", "DELETE", data);
+
   return {
     login,
     logout,
@@ -166,6 +174,11 @@ const useapi = () => {
     updateSubmission,
     createSubmission,
     deleteSubmission,
+
+    getObservation,
+    createObservation,
+    updateObservation,
+    deleteObservation,
   };
 };
 

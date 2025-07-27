@@ -16,6 +16,7 @@ const useStore = () => {
     checkpoints: null,
     sops: null,
     submissions: null,
+    observations: null,
   });
 
   const [loading, setloading] = useState(false);
@@ -28,6 +29,7 @@ const useStore = () => {
     checkpoints: api.getCheckpoints,
     sops: api.getSops,
     submissions: api.getSubmission,
+    observations: api.getObservation,
   };
 
   const fetchDataFromAPI = async (table: string) => {
