@@ -48,8 +48,8 @@ export default function ReviewsPage() {
     const checkpoints = store?.db?.checkpoints;
     const submittedSubmissions = store?.db?.submissions;
 
-    let submissionData = [];
-    let yearsData = [];
+    let submissionData = [] as any[];
+    let yearsData = [] as any[];
 
     if (checkpoints) {
       checkpoints?.map((cpoint: any) => {

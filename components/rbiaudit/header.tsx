@@ -46,6 +46,7 @@ const Header = ({ audit }: any) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectItem value={"all"}>All years</SelectItem>
               {audit?.financialYears.map((year: string) => (
                 <SelectItem key={year} value={year}>
                   {year}

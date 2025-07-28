@@ -12,13 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  FileText,
-  CheckCircle2,
-  AlertTriangle,
-  AlertOctagon,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import useStore from "@/lib/store/useStore";
 import SubmissionPopup from "./submitdialog";
 import ViewPopup from "./viewdialog";
@@ -47,21 +41,21 @@ export default function SubmissionsPage() {
   const [selectedFinancialYear, setSelectedFinancialYear] = useState("all");
 
   const poppulateSubmissions = () => {
-    const checkpoints = store?.db?.checkpoints;
-    const submittedSubmissions = store?.db?.submissions;
+    const checkpoints = store?.db?.checkpoints || [];
+    const submittedSubmissions = store?.db?.submissions || [];
 
     let submissionData = [];
-    let yearsData = [];
+    let yearsData = [] as any[];
 
     if (checkpoints) {
       checkpoints?.map((cpoint: any) => {
         cpoint.subCheckpoints.map((subpoint: any) => {
           let status = "pending";
-          let attachments = [];
+          let attachments = [] as any[];
           let expectedClosuredate = "";
           let createdAt = "";
           let assignedTo = "";
-          let submissionId: "";
+          let submissionId = "";
           let remarks = "";
           let expectedClosureDate = "";
           let submittedBy = "";
@@ -124,46 +118,22 @@ export default function SubmissionsPage() {
     }
   };
 
+  const poppulateRBIAuditSubmissions = () => {
+    setRbiAuditSubmissions(store?.db?.observations);
+  };
+
   useEffect(() => {
     poppulateSubmissions();
-  }, [store.db.checkpoints, store.db.submissions]);
-
-  //   useEffect(() => {
-  //     const rbiObservations = getRBIObservations();
-  //     const userAssignedObservations = rbiObservations
-  //       .filter((obs) => obs.assignedTo === user.name && obs.status !== "Closed")
-  //       .map((obs) => ({
-  //         id: obs.id,
-  //         observationNumber: obs.observationNumber,
-  //         title: obs.title,
-  //         auditCategory: obs.auditCategory || "RMP",
-  //         severity: obs.severity,
-  //         status: obs.status,
-  //         targetDate: obs.targetDate,
-  //         progress: obs.progress || 0,
-  //         assignedDepartment: obs.assignedDepartment,
-  //         description: obs.description,
-  //         recommendation: obs.recommendation,
-  //         actionTaken: obs.actionTaken || "",
-  //         departmentComments: obs.departmentComments || "",
-  //         evidenceUploaded: obs.evidenceUploaded || [],
-  //       }));
-
-  //     setRbiAuditSubmissions(userAssignedObservations);
-  //     setFilteredRbiAuditSubmissions(userAssignedObservations);
-  //   }, [user.name]);
-
-  //   useEffect(() => {
-  //     filterRbiAuditSubmissions();
-  //   }, [rbiAuditSubmissions, searchTerm, statusFilter, selectedFinancialYear]);
+    poppulateRBIAuditSubmissions();
+  }, [store.db.checkpoints, store.db.submissions, store?.db?.observations]);
 
   const filterRbiAuditSubmissions = () => {
-    let filtered = rbiAuditSubmissions;
+    let filtered = [...rbiAuditSubmissions];
 
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
-        (sub) =>
+        (sub: any) =>
           sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           sub.observationNumber
             .toLowerCase()
@@ -190,20 +160,9 @@ export default function SubmissionsPage() {
     setFilteredRbiAuditSubmissions(filtered);
   };
 
-  const getRbiCategoryIcon = (category: string) => {
-    switch (category) {
-      case "RMP":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case "IRAR":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case "SSI":
-        return <FileText className="h-4 w-4 text-blue-500" />;
-      case "MNCR":
-        return <AlertOctagon className="h-4 w-4 text-red-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    }
-  };
+  useEffect(() => {
+    filterRbiAuditSubmissions();
+  }, [rbiAuditSubmissions, searchTerm, statusFilter]);
 
   const getFinancialYear = () => {
     const now = new Date();
@@ -335,7 +294,11 @@ export default function SubmissionsPage() {
                 setIsViewSubmission={setIsViewSubmission}
                 store={store}
               />
-              {/* <Rbiauditview /> */}
+              <Rbiauditview
+                filteredRbiAuditSubmissions={filteredRbiAuditSubmissions}
+                setSelectedSubmission={setSelectedSubmission}
+                setShowSubmitDialog={setShowSubmitDialog}
+              />
             </CardContent>
           </Card>
         </Tabs>

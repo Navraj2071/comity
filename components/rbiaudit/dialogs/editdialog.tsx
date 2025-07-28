@@ -18,17 +18,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useapi from "@/components/api/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { ClipLoader } from "react-spinners";
 
 const Editdialog = ({ audit }: any) => {
-  const handleUpdateObservation = (formData: FormData) => {
+  const api = useapi();
+
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const handleUpdateObservation = async (formData: FormData) => {
     if (!audit?.selectedObservation) return;
 
     const updates = {
+      _id: audit.selectedObservation._id,
       status: formData.get("status") as any,
       progress: Number.parseInt(formData.get("progress") as string),
       actionTaken: formData.get("actionTaken") as string,
       departmentComments: formData.get("departmentComments") as string,
     };
+
+    setStatus("");
+    setLoading(true);
+    await api
+      .updateObservation(updates)
+      .then((res) => {
+        audit?.store?.update("observations");
+        audit?.setShowEditDialog(false);
+      })
+      .catch((err) => setStatus(err.message));
+    setLoading(false);
   };
 
   return (
@@ -113,6 +134,14 @@ const Editdialog = ({ audit }: any) => {
                 rows={3}
               />
             </div>
+
+            {status && status !== "" && (
+              <Alert className="bg-red-900/20 border-red-800 text-red-400">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{status}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
@@ -126,7 +155,17 @@ const Editdialog = ({ audit }: any) => {
                 type="submit"
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
               >
-                Update Observation
+                {loading ? (
+                  <ClipLoader
+                    color={"#000000"}
+                    loading={true}
+                    size={20}
+                    aria-label="Loading Spinner"
+                    data-testid="loader"
+                  />
+                ) : (
+                  <div>Update Observation</div>
+                )}
               </Button>
             </div>
           </form>

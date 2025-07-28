@@ -8,6 +8,8 @@ import {
 import { PieChart } from "../pie-chart";
 
 const Statsdisplay = ({ audit }: any) => {
+  if (!audit.selectedCategory) return null;
+  const stats = audit?.categoryStats[audit?.selectedCategory];
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Stats Cards */}
@@ -20,9 +22,7 @@ const Statsdisplay = ({ audit }: any) => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {audit?.auditStats.total}
-              </div>
+              <div className="text-2xl font-bold text-white">{stats.total}</div>
               <p className="text-xs text-gray-400 mt-1">
                 FY {audit?.selectedFinancialYear}
               </p>
@@ -36,7 +36,7 @@ const Statsdisplay = ({ audit }: any) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-400">
-                {audit?.auditStats.critical + audit?.auditStats.high}
+                {stats.critical + stats.high}
               </div>
               <p className="text-xs text-gray-400 mt-1">Immediate attention</p>
             </CardContent>
@@ -49,7 +49,7 @@ const Statsdisplay = ({ audit }: any) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-400">
-                {audit?.auditStats.inProgress}
+                {stats.inProgress}
               </div>
               <p className="text-xs text-gray-400 mt-1">Being addressed</p>
             </CardContent>
@@ -62,7 +62,7 @@ const Statsdisplay = ({ audit }: any) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-400">
-                {audit?.auditStats.overdue}
+                {stats.overdue}
               </div>
               <p className="text-xs text-gray-400 mt-1">Past deadline</p>
             </CardContent>
@@ -75,7 +75,7 @@ const Statsdisplay = ({ audit }: any) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-400">
-                {audit?.auditStats.closed}
+                {stats.closed}
               </div>
               <p className="text-xs text-gray-400 mt-1">Completed</p>
             </CardContent>
@@ -83,7 +83,6 @@ const Statsdisplay = ({ audit }: any) => {
         </div>
       </div>
 
-      {/* Pie Chart */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader className="pb-4">
           <CardTitle className="text-white text-center">
@@ -100,27 +99,27 @@ const Statsdisplay = ({ audit }: any) => {
             data={[
               {
                 name: "Open",
-                value: audit?.auditStats.open,
+                value: stats.open,
                 color: "#3b82f6",
               },
               {
                 name: "In Progress",
-                value: audit?.auditStats.inProgress,
+                value: stats.inProgress,
                 color: "#f59e0b",
               },
               {
                 name: "Pending Closure",
-                value: audit?.auditStats.pendingClosure,
+                value: stats.pendingClosure,
                 color: "#f97316",
               },
               {
                 name: "Closed",
-                value: audit?.auditStats.closed,
+                value: stats.closed,
                 color: "#10b981",
               },
               {
                 name: "Overdue",
-                value: audit?.auditStats.overdue,
+                value: stats.overdue,
                 color: "#ef4444",
               },
             ]}

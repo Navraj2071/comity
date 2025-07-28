@@ -8,7 +8,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Eye, Edit, Calendar, Building2, User, TrendingUp } from "lucide-react";
+import {
+  Eye,
+  Edit,
+  Calendar,
+  Building2,
+  User,
+  TrendingUp,
+  AlertTriangle,
+  AlertOctagon,
+  FileSearch,
+  ClipboardCheck,
+  ShieldAlert,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 const Observationtable = ({ audit }: any) => {
@@ -80,9 +96,44 @@ const Observationtable = ({ audit }: any) => {
     }
   };
 
+  const filterObservations = () => {
+    if (audit?.store?.db?.observations) {
+      let filteredobs = [...audit?.store?.db?.observations];
+
+      if (audit?.searchTerm !== "") {
+        filteredobs = filteredobs.filter(
+          (obs) =>
+            obs.observationNumber
+              .toLowerCase()
+              .includes(audit?.searchTerm?.toLowerCase()) ||
+            obs.title.toLowerCase().includes(audit?.searchTerm?.toLowerCase())
+        );
+      }
+
+      if (audit?.categoryFilter !== "all") {
+        filteredobs = filteredobs.filter(
+          (obs) => obs.category === audit?.categoryFilter
+        );
+      }
+
+      if (audit?.departmentFilter !== "all") {
+        filteredobs = filteredobs.filter(
+          (obs) => obs.department === audit?.departmentFilter
+        );
+      }
+
+      setFilteredObservations(filteredobs);
+    }
+  };
+
   useEffect(() => {
-    console.log(audit?.observations);
-  }, [audit?.observations]);
+    filterObservations();
+  }, [
+    audit?.store?.db?.observations,
+    audit?.searchTerm,
+    audit?.categoryFilter,
+    audit?.departmentFilter,
+  ]);
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -97,9 +148,9 @@ const Observationtable = ({ audit }: any) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {filteredObservations.length > 0 ? (
+        {filteredObservations?.length > 0 ? (
           <div className="space-y-4">
-            {filteredObservations.map((observation) => (
+            {filteredObservations?.map((observation) => (
               <Card
                 key={observation._id}
                 className="bg-gray-900 border-gray-600"
@@ -128,7 +179,7 @@ const Observationtable = ({ audit }: any) => {
                         </Badge>
                         <Badge className="bg-[#e9b306] text-black flex items-center gap-1">
                           {getCategoryIcon(observation.auditCategory || "RMP")}
-                          {observation.auditCategory || "RMP"}
+                          {observation.category || "RMP"}
                         </Badge>
                       </div>
                       <h3 className="text-lg font-semibold text-white mb-1">
@@ -140,11 +191,15 @@ const Observationtable = ({ audit }: any) => {
                       <div className="flex flex-wrap gap-4 text-sm text-gray-400">
                         <span className="flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
-                          {observation.assignedDepartment}
+                          {audit?.store?.tools?.getDepartmentNameFromId(
+                            observation.department
+                          )}
                         </span>
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {observation.assignedTo}
+                          {audit?.store?.tools?.getUserNameFromId(
+                            observation.assignedTo
+                          )}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
@@ -155,7 +210,11 @@ const Observationtable = ({ audit }: any) => {
                         </span>
                         <span className="flex items-center gap-1">
                           <TrendingUp className="h-3 w-3" />
-                          Progress: {observation.progress}%
+                          Progress:{" "}
+                          {!observation.progress || observation.progress === ""
+                            ? 0
+                            : observation.progress}
+                          %
                         </span>
                       </div>
                     </div>

@@ -13,10 +13,15 @@ export interface IObservation extends Document {
   department: Types.ObjectId;
   assignedTo: Types.ObjectId;
   targetDate: "";
-  createdAt: Date;
   status: "";
   progress: "";
   createdBy: Types.ObjectId;
+  actionTaken: "";
+  departmentComments: "";
+  evidenceUploaded: [];
+  createdAt: Date;
+  updatedAt: Date;
+  closureDate: "";
 }
 
 const ObservationSchema = new Schema<IObservation>(
@@ -36,6 +41,10 @@ const ObservationSchema = new Schema<IObservation>(
     status: { type: String },
     progress: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    actionTaken: { type: String },
+    departmentComments: { type: String },
+    evidenceUploaded: { type: [String] },
+    closureDate: { type: String },
   },
   { timestamps: true }
 );

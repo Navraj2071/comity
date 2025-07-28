@@ -87,29 +87,39 @@ const SubmissionPopup = ({
     setLoading(false);
   };
 
-  const handleRbiAuditSubmit = (formData: any) => {
+  const handleRbiAuditSubmit = async (formData: any) => {
     if (!selectedSubmission) return;
-
     const updates = {
       status: "Pending Closure",
-      progress: Number.parseInt(formData.get("progress")),
+      progress: Number.parseFloat(formData.get("progress")),
       actionTaken: formData.get("actionTaken"),
       departmentComments: formData.get("departmentComments"),
-      evidenceUploaded: ["evidence.pdf"], // In a real app, handle file uploads
     };
-
-    // Update in storage
-    updateSubCheckpoint(selectedSubmission.id, updates);
-
-    // Update local state
-    setRbiAuditSubmissions((prev: any) =>
-      prev.map((sub: any) =>
-        sub.id === selectedSubmission.id ? { ...sub, ...updates } : sub
-      )
+    const files = [] as string[];
+    setLoading(true);
+    await Promise.all(
+      formdata.attachments.map(async (file) => {
+        await api
+          .fileUpload(file)
+          .then((res) => files.push(res.url))
+          .catch((err) => console.log(err));
+      })
     );
 
-    setShowSubmitDialog(false);
-    setSelectedSubmission(null);
+    await api
+      .updateObservation({
+        ...updates,
+        evidenceUploaded: files,
+        _id: selectedSubmission._id,
+      })
+      .then((res) => {
+        setShowSubmitDialog(false);
+        store.update("observations");
+        setSelectedSubmission(null);
+      })
+      .catch((err) => setStatus(err.message));
+
+    setLoading(false);
   };
 
   const selectFiles = async () => {

@@ -8,50 +8,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 
 const Departmentstats = ({ audit }: any) => {
-  const getFilteredDepartmentStats = () => {
-    const filteredObservations = audit?.observations.filter(
-      (obs: any) =>
-        audit?.categoryFilter === "all" ||
-        obs.auditCategory === audit?.categoryFilter
-    );
-
-    return audit?.store?.db?.departments
-      .map((dept: any) => {
-        const deptObservations = filteredObservations.filter(
-          (o: any) => o.assignedDepartment === dept.name
-        );
-
-        const stats = {
-          department: dept.name,
-          total: deptObservations.length,
-          open: deptObservations.filter((o) => o.status === "Open").length,
-          inProgress: deptObservations.filter((o) => o.status === "In Progress")
-            .length,
-          pendingClosure: deptObservations.filter(
-            (o: any) => o.status === "Pending Closure"
-          ).length,
-          closed: deptObservations.filter((o) => o.status === "Closed").length,
-          overdue: deptObservations.filter((o) => o.status === "Overdue")
-            .length,
-          critical: deptObservations.filter((o) => o.severity === "Critical")
-            .length,
-          high: deptObservations.filter((o) => o.severity === "High").length,
-          avgProgress:
-            deptObservations.length > 0
-              ? Math.round(
-                  deptObservations.reduce((sum, o) => sum + o.progress, 0) /
-                    deptObservations.length
-                )
-              : 0,
-          observations: deptObservations,
-        };
-
-        return stats;
-      })
-      .filter((dept: any) => dept.total > 0);
-  };
-
-  const departmentStats = [];
+  const departmentStats = audit?.departmentStats;
 
   return (
     <Card className="bg-gray-800 border-gray-700">

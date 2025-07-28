@@ -10,13 +10,13 @@ const useStore = () => {
 
   const [db, setDb] = useState({
     user: null,
-    allUsers: null,
-    departments: null,
-    regulatoryDepartments: null,
-    checkpoints: null,
-    sops: null,
-    submissions: null,
-    observations: null,
+    allUsers: [],
+    departments: [],
+    regulatoryDepartments: [],
+    checkpoints: [],
+    sops: [],
+    submissions: [],
+    observations: [],
   });
 
   const [loading, setloading] = useState(false);

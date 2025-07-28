@@ -1,6 +1,64 @@
-import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  AlertOctagon,
+} from "lucide-react";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 
-const Rbiauditview = () => {
+const Rbiauditview = ({
+  filteredRbiAuditSubmissions,
+  setSelectedSubmission,
+  setShowSubmitDialog,
+}: any) => {
+  const getRbiCategoryIcon = (category: string) => {
+    switch (category) {
+      case "RMP":
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case "IRAR":
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case "SSI":
+        return <FileText className="h-4 w-4 text-blue-500" />;
+      case "MNCR":
+        return <AlertOctagon className="h-4 w-4 text-red-500" />;
+      default:
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge className="bg-blue-500">Pending</Badge>;
+      case "submitted":
+        return <Badge className="bg-green-500">Submitted</Badge>;
+      case "overdue":
+        return <Badge className="bg-red-500">Overdue</Badge>;
+      case "Open":
+        return <Badge className="bg-blue-500">Open</Badge>;
+      case "In Progress":
+        return <Badge className="bg-yellow-500">In Progress</Badge>;
+      case "Pending Closure":
+        return <Badge className="bg-orange-500">Pending Closure</Badge>;
+      case "Closed":
+        return <Badge className="bg-green-500">Closed</Badge>;
+      case "Overdue":
+        return <Badge className="bg-red-500">Overdue</Badge>;
+      default:
+        return <Badge className="bg-gray-500">{status}</Badge>;
+    }
+  };
+
   return (
     <TabsContent value="rbi-audit" className="mt-0">
       <Table>
@@ -18,9 +76,9 @@ const Rbiauditview = () => {
         </TableHeader>
         <TableBody>
           {filteredRbiAuditSubmissions.length > 0 ? (
-            filteredRbiAuditSubmissions.map((submission) => (
+            filteredRbiAuditSubmissions.map((submission: any) => (
               <TableRow
-                key={submission.id}
+                key={submission._id}
                 className="border-gray-700 hover:bg-gray-800"
               >
                 <TableCell className="text-white font-mono">
@@ -29,8 +87,8 @@ const Rbiauditview = () => {
                 <TableCell className="text-white">{submission.title}</TableCell>
                 <TableCell className="text-gray-300">
                   <div className="flex items-center gap-1">
-                    {getRbiCategoryIcon(submission.auditCategory)}
-                    <span>{submission.auditCategory}</span>
+                    {getRbiCategoryIcon(submission.category)}
+                    <span>{submission.category}</span>
                   </div>
                 </TableCell>
                 <TableCell>

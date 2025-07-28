@@ -81,7 +81,7 @@ const Filters = ({ audit }: any) => {
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700">
               <SelectItem value="all">All Departments</SelectItem>
-              {[].map((dept: any) => (
+              {audit?.store?.db?.departments?.map((dept: any) => (
                 <SelectItem key={dept._id} value={dept._id}>
                   {dept.name}
                 </SelectItem>

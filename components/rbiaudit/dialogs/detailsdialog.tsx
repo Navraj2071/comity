@@ -93,7 +93,7 @@ const Detailsdialog = ({ audit }: any) => {
       open={audit?.showDetailsDialog}
       onOpenChange={audit?.setShowDetailsDialog}
     >
-      <DialogContent className="max-w-4xl bg-gray-800 border-gray-700 text-white">
+      <DialogContent className="max-w-4xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-scroll">
         <DialogHeader>
           <DialogTitle>Observation Details</DialogTitle>
         </DialogHeader>
@@ -124,12 +124,10 @@ const Detailsdialog = ({ audit }: any) => {
                 <div>
                   <Label className="text-gray-400">Audit Category</Label>
                   <Badge className="bg-[#e9b306] text-black mt-1 flex items-center gap-1 w-fit">
-                    {getCategoryIcon(
-                      selectedObservation.auditCategory || "RMP"
-                    )}
+                    {getCategoryIcon(selectedObservation.category || "RMP")}
                     {
                       audit?.AUDIT_CATEGORIES[
-                        selectedObservation.auditCategory || "RMP"
+                        selectedObservation.category || "RMP"
                       ]
                     }
                   </Badge>
@@ -137,11 +135,11 @@ const Detailsdialog = ({ audit }: any) => {
                 <div>
                   <Label className="text-gray-400">Observation Category</Label>
                   <p className="text-white">
-                    {audit?.selectedObservation.category}
+                    {audit?.selectedObservation.observationCategory}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-gray-400">Severity</Label>
+                  <Label className="text-gray-400">Severity: </Label>
                   <Badge
                     className={`${getSeverityColor(
                       selectedObservation.severity
@@ -166,12 +164,18 @@ const Detailsdialog = ({ audit }: any) => {
                 <div>
                   <Label className="text-gray-400">Assigned Department</Label>
                   <p className="text-white">
-                    {selectedObservation.assignedDepartment}
+                    {audit?.store?.tools?.getDepartmentNameFromId(
+                      selectedObservation.department
+                    )}
                   </p>
                 </div>
                 <div>
                   <Label className="text-gray-400">Assigned To</Label>
-                  <p className="text-white">{selectedObservation.assignedTo}</p>
+                  <p className="text-white">
+                    {audit?.store?.tools?.getUserNameFromId(
+                      selectedObservation.assignedTo
+                    )}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-gray-400">Target Date</Label>
@@ -245,6 +249,7 @@ const Detailsdialog = ({ audit }: any) => {
                         <div
                           key={index}
                           className="flex items-center gap-2 text-blue-400"
+                          onClick={() => window.open(file)}
                         >
                           <FileText className="h-4 w-4" />
                           <span>{file}</span>
@@ -265,9 +270,7 @@ const Detailsdialog = ({ audit }: any) => {
               <div>
                 <Label className="text-gray-400">Last Updated</Label>
                 <p className="text-white">
-                  {new Date(
-                    selectedObservation.lastUpdated
-                  ).toLocaleDateString()}
+                  {new Date(selectedObservation.updatedAt).toLocaleDateString()}
                 </p>
               </div>
               {selectedObservation.closureDate && (
