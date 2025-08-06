@@ -44,6 +44,7 @@ const useapi = () => {
       body: JSON.stringify(data),
     });
     if (response.status === 401) {
+      alert(`Rerouting due to ${endpoint} unauthorized`);
       router.push("/login");
       throw 401;
     }
