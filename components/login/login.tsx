@@ -42,6 +42,7 @@ export default function LoginPage() {
         router.refresh();
       })
       .catch((err) => {
+        console.log(err);
         setError(err);
       });
     setIsLoading(false);

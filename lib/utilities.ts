@@ -103,17 +103,6 @@ export const sendEmailFromNotification = async (notification: any) => {
 
   const user = await User.findById(notification.user);
 
-  console.log(`Dear ${user.name},
-
-${notification.message}
-
-Regards,
-Comity App
-
-This is an automatically generated email. Please do not reply.
-    
-    `);
-
   await transporter.sendMail({
     from: `"Comity" <${process.env.EMAIL_USER}>`,
     to: user.email,

@@ -22,31 +22,37 @@ const Bulkuploaddialog = ({ audit }: any) => {
     input.onchange = async (event: any) => {
       const file = event.target.files[0];
 
-      const csvText = await file.text();
-
-      // Split into rows
-      const rows = csvText.trim().split("\n");
-      console.log(rows);
-
-      // Get headers
-      const headers = rows[0].split(",").map((header: any) => header.trim());
-
-      // Parse rows into objects
-      const data = rows.slice(1).map((row: any) => {
-        const values = row.split(",").map((val: any) => val.trim());
-        const obj = {} as any;
-        headers.forEach((header: string, index: number) => {
-          obj[header] = values[index] || "";
-        });
-        return obj;
-      });
-
-      setUploadeddata(data);
-
-      document.body.removeChild(input);
+      processCsv(file, input);
     };
 
     input.click();
+  };
+
+  const processCsv = async (file: File, input: any) => {
+    const csvText = await file.text();
+
+    // Split into rows
+    const rows = csvText.trim().split("\n");
+    console.log(rows);
+
+    // Get headers
+    const headers = rows[0].split(",").map((header: any) => header.trim());
+
+    // Parse rows into objects
+    const data = rows.slice(1).map((row: any) => {
+      const values = row.split(",").map((val: any) => val.trim());
+      const obj = {} as any;
+      headers.forEach((header: string, index: number) => {
+        obj[header] = values[index] || "";
+      });
+      return obj;
+    });
+
+    setUploadeddata(data);
+
+    if (input) {
+      document.body.removeChild(input);
+    }
   };
 
   return (
@@ -65,19 +71,7 @@ const Bulkuploaddialog = ({ audit }: any) => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-400 mb-2">
-                Drop your CSV or Excel file here, or click to browse
-              </p>
-              <Button
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                onClick={handleUpload}
-              >
-                Choose File
-              </Button>
-            </div>
+            <DragAndDrop handleUpload={handleUpload} processCsv={processCsv} />
             <div className="bg-gray-900 rounded-lg p-4">
               <h4 className="text-white font-medium mb-2">
                 File Format Requirements:
@@ -87,7 +81,7 @@ const Bulkuploaddialog = ({ audit }: any) => {
                   • Include columns: Observation Number, Title, Description,
                   Severity, Department, etc.
                 </li>
-                <li>• Supported formats: CSV, Excel (.xlsx)</li>
+                <li>• Supported formats: CSV (.csv)</li>
                 <li>• Maximum file size: 10MB</li>
                 <li>• Download template file for reference</li>
               </ul>
@@ -125,3 +119,47 @@ const Bulkuploaddialog = ({ audit }: any) => {
 };
 
 export default Bulkuploaddialog;
+
+const DragAndDrop = ({ handleUpload, processCsv }: any) => {
+  const [isOver, setIsOver] = useState(false);
+  const [dropped, setDropped] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(false);
+    setDropped(true);
+    processCsv(e.dataTransfer.files[0], null);
+  };
+
+  return (
+    <div
+      className={`border-2 border-dashed rounded-lg p-8 text-center ${
+        isOver ? "border-blue-500 bg-gray-900" : "border-gray-600 "
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+      <p className="text-gray-400 mb-2">
+        Drop your CSV or Excel file here, or click to browse
+      </p>
+      <Button
+        variant="outline"
+        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+        onClick={handleUpload}
+      >
+        Choose File
+      </Button>
+    </div>
+  );
+};

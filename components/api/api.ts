@@ -17,13 +17,8 @@ const useapi = () => {
     if (response.ok) {
       return await response.json();
     } else {
-      try {
-        const data = await response.json();
-        throw data.message;
-      } catch (e) {
-        console.log(e);
-        throw "Server error";
-      }
+      const data = await response.json();
+      throw data.message;
     }
   };
 

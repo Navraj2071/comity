@@ -13,6 +13,9 @@ export interface ISubCheckpoint extends Document {
   evidencePlaceholder: "";
   submittedBy: Types.ObjectId;
   assignedTo: Types.ObjectId;
+  isCompliable: boolean;
+  submitterComments: "";
+  expectedClosureDate: "";
 }
 
 const SubCheckpointSchema = new Schema<ISubCheckpoint>({
@@ -39,6 +42,9 @@ const SubCheckpointSchema = new Schema<ISubCheckpoint>({
     type: Schema.Types.ObjectId,
     ref: "User",
   },
+  isCompliable: { type: Boolean, default: true },
+  submitterComments: { type: String },
+  expectedClosureDate: { type: String },
 });
 
 const SubCheckpoint =

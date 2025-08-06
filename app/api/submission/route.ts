@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
 import Submission from "@/lib/models/submission";
-import { authenticateUser } from "@/lib/utilities";
+import { authenticateUser, createNotification } from "@/lib/utilities";
+import Department from "@/lib/models/department";
+import SubCheckpoint from "@/lib/models/subcheckpoint";
+import User from "@/lib/models/user";
 
 export async function GET(request: Request) {
   const { user, message, error } = await authenticateUser();
@@ -39,6 +41,24 @@ export async function POST(request: Request) {
       ...data,
       submittedBy: user._id,
     });
+
+    if (data.status === "pending_review") {
+      SubCheckpoint.findById(newSubmission.subCheckpoint)
+        .then((subpoint) => {
+          Department.findById(subpoint.department)
+            .then((dept) => {
+              User.findById(dept.head)
+                .then((user) => {
+                  const notificationMessage = `A new compliance submission requires your review.\n\nTitle: ${subpoint.title}\n\nYou are receiving this message because you are the HOD of your department.`;
+
+                  createNotification(user._id, notificationMessage, "low");
+                })
+                .catch((err) => console.log(err));
+            })
+            .catch((err) => console.log(err));
+        })
+        .catch((err) => console.log(err));
+    }
 
     return NextResponse.json(
       {

@@ -16,7 +16,7 @@ import { Upload, FileText, Trash2, Download } from "lucide-react";
 import { updateSubCheckpoint, getRBIObservations } from "@/lib/storage";
 import useapi from "../api/api";
 import { Alert, AlertDescription } from "../ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import { getNextDeadline } from "@/lib/tools";
 
@@ -28,6 +28,167 @@ const SubmissionPopup = ({
   activeTab,
   store,
 }: any) => {
+  const [isCompliable, setIsCompliable] = useState(true);
+  const [submitterComments, setSubmitterComments] = useState("");
+
+  return (
+    <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+      <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-scroll">
+        <DialogHeader>
+          <DialogTitle>Submit Compliance Evidence</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            {activeTab === "checkpoints"
+              ? "Provide evidence and remarks for the selected checkpoint"
+              : "Update progress and provide evidence for the RBI audit observation"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {activeTab === "checkpoints" && (
+          <div className="flex items-center">
+            <input
+              type="radio"
+              id="approve"
+              name="decision"
+              value={isCompliable ? "no" : "yes"}
+              checked={!isCompliable}
+              className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-600 bg-gray-900"
+              onClick={() => setIsCompliable(!isCompliable)}
+              onChange={() => {}}
+            />
+            <Label
+              htmlFor="approve"
+              className="ml-2 text-white flex items-center gap-1"
+            >
+              This checkpoint can not be complied at this moment
+            </Label>
+          </div>
+        )}
+
+        {isCompliable ? (
+          <SubmissionForm
+            selectedSubmission={selectedSubmission}
+            setSelectedSubmission={setSelectedSubmission}
+            store={store}
+            activeTab={activeTab}
+            setShowSubmitDialog={setShowSubmitDialog}
+          />
+        ) : (
+          <UnCompliableForm
+            store={store}
+            setShowSubmitDialog={setShowSubmitDialog}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default SubmissionPopup;
+
+const UnCompliableForm = ({ store, setShowSubmitDialog }: any) => {
+  const api = useapi();
+  const [comments, setComments] = useState("");
+  const [expectedClosureDate, setExpectedClosureDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const handleSubmit = async () => {
+    setStatus("");
+    setLoading(true);
+    await api
+      .updateSubCheckpoint({
+        isCompliable: false,
+        submitterComments: comments,
+        expectedClosureDate: expectedClosureDate,
+      })
+      .then((res) => {
+        store?.update("submissions");
+        store?.update("checkpoints");
+        setShowSubmitDialog(false);
+      })
+      .catch((err) => setStatus(err?.message || "Server error"));
+    setLoading(false);
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <Label htmlFor="departmentComments">Comments</Label>
+        <Textarea
+          id="departmentComments"
+          name="departmentComments"
+          placeholder="Provide comments for why the checkpoint cannot be complied to."
+          className="bg-gray-900 border-gray-600"
+          rows={3}
+          defaultValue={comments || ""}
+          onChange={(e) => setComments(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="expectedClosureDate">Expected Closure Date</Label>
+        <Input
+          id="expectedClosureDate"
+          name="expectedClosureDate"
+          value={expectedClosureDate}
+          onChange={(e) => setExpectedClosureDate(e.target.value)}
+          type="date"
+          required
+          className="bg-gray-900 border-gray-600"
+        />
+      </div>
+
+      {status && status !== "" && (
+        <Alert className="bg-red-900/20 border-red-800 text-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{status}</AlertDescription>
+        </Alert>
+      )}
+
+      <DialogFooter className="pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowSubmitDialog(false)}
+          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-yellow-500 hover:bg-yellow-600 text-black"
+          disabled={loading}
+        >
+          {loading ? (
+            <ClipLoader
+              color={"#000000"}
+              loading={true}
+              size={20}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          ) : (
+            "Submit"
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+};
+
+const SubmissionForm = ({
+  selectedSubmission,
+  setShowSubmitDialog,
+  store,
+  setSelectedSubmission,
+  activeTab,
+}: any) => {
   const api = useapi();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
@@ -35,14 +196,12 @@ const SubmissionPopup = ({
   const [formdata, setFormdata] = useState({
     remarks: "",
     attachments: [],
-    expectedClosureDate: "",
   });
 
   useEffect(() => {
     setFormdata({
       remarks: "",
       attachments: [],
-      expectedClosureDate: "",
     });
   }, [selectedSubmission]);
 
@@ -150,292 +309,234 @@ const SubmissionPopup = ({
   };
 
   return (
-    <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-      <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-scroll">
-        <DialogHeader>
-          <DialogTitle>Submit Compliance Evidence</DialogTitle>
-          <DialogDescription className="text-gray-400">
-            {activeTab === "checkpoints"
-              ? "Provide evidence and remarks for the selected checkpoint"
-              : "Update progress and provide evidence for the RBI audit observation"}
-          </DialogDescription>
-        </DialogHeader>
-        {selectedSubmission && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (activeTab === "checkpoints") {
-                handleSubmit();
-              } else {
-                handleRbiAuditSubmit(new FormData(e.currentTarget));
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <Label className="text-gray-400">
-                {activeTab === "checkpoints" ? "Checkpoint" : "Observation"}
-              </Label>
-              <div className="text-white text-xl">
-                {activeTab === "checkpoints" ? (
-                  <div className="flex gap-2 items-center">
-                    <div className="text-white text-xs bg-red-500 rounded-full p-2">
-                      {selectedSubmission?.regulatory}
-                    </div>
-                    {selectedSubmission?.checkpointTitle}
-                    <div className="text-white text-xs bg-gray-500 rounded-full p-2">
-                      {selectedSubmission?.type}
-                    </div>
+    <>
+      {selectedSubmission && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (activeTab === "checkpoints") {
+              handleSubmit();
+            } else {
+              handleRbiAuditSubmit(new FormData(e.currentTarget));
+            }
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <Label className="text-gray-400">
+              {activeTab === "checkpoints" ? "Checkpoint" : "Observation"}
+            </Label>
+            <div className="text-white text-xl">
+              {activeTab === "checkpoints" ? (
+                <div className="flex gap-2 items-center">
+                  <div className="text-white text-xs bg-red-500 rounded-full p-2">
+                    {selectedSubmission?.regulatory}
                   </div>
-                ) : (
-                  selectedSubmission?.title
-                )}
-              </div>
-              <p className="text-gray-500 font-light text-sm">
-                {activeTab === "checkpoints" &&
-                  selectedSubmission?.letterNumber}
-              </p>
-              <p className="text-gray-500 font-light text-sm"></p>
-              <div className="text-sm text-white mt-1">
-                {activeTab === "checkpoints" ? (
-                  <div className="flex gap-2">
-                    {selectedSubmission?.subCheckpointTitle} |
-                    <div className="text-gray-400">
-                      {selectedSubmission?.department}
-                    </div>
+                  {selectedSubmission?.checkpointTitle}
+                  <div className="text-white text-xs bg-gray-500 rounded-full p-2">
+                    {selectedSubmission?.type}
                   </div>
-                ) : (
-                  selectedSubmission?.description
-                )}
-              </div>
-              <p className="text-gray-300 font-light text-sm">
-                {activeTab === "checkpoints" && (
-                  <>
-                    Deadline:{" "}
-                    {selectedSubmission?.type === "recurring"
-                      ? getNextDeadline(
-                          selectedSubmission?.frequency
-                        ).toLocaleDateString()
-                      : new Date(
-                          selectedSubmission?.deadline
-                        ).toLocaleDateString()}
-                  </>
-                )}
-              </p>
+                </div>
+              ) : (
+                selectedSubmission?.title
+              )}
             </div>
+            <p className="text-gray-500 font-light text-sm">
+              {activeTab === "checkpoints" && selectedSubmission?.letterNumber}
+            </p>
+            <p className="text-gray-500 font-light text-sm"></p>
+            <div className="text-sm text-white mt-1">
+              {activeTab === "checkpoints" ? (
+                <div className="flex gap-2">
+                  {selectedSubmission?.subCheckpointTitle} |
+                  <div className="text-gray-400">
+                    {selectedSubmission?.department}
+                  </div>
+                </div>
+              ) : (
+                selectedSubmission?.description
+              )}
+            </div>
+            <p className="text-gray-300 font-light text-sm">
+              {activeTab === "checkpoints" && (
+                <>
+                  Deadline:{" "}
+                  {selectedSubmission?.type === "recurring"
+                    ? getNextDeadline(
+                        selectedSubmission?.frequency
+                      ).toLocaleDateString()
+                    : new Date(
+                        selectedSubmission?.deadline
+                      ).toLocaleDateString()}
+                </>
+              )}
+            </p>
+          </div>
 
-            {activeTab === "rbi-audit" && (
-              <div>
-                <Label htmlFor="progress">Progress (%)</Label>
-                <Input
-                  id="progress"
-                  name="progress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  defaultValue={selectedSubmission.progress}
-                  required
-                  className="bg-gray-900 border-gray-600"
-                />
-              </div>
-            )}
-
+          {activeTab === "rbi-audit" && (
             <div>
-              <Label
-                htmlFor={
-                  activeTab === "checkpoints" ? "remarks" : "actionTaken"
-                }
-              >
-                {activeTab === "checkpoints"
-                  ? selectedSubmission?.isRemarksRequired
-                    ? "Remarks"
-                    : "Remarks (optional)"
-                  : "Action Taken"}
-              </Label>
-              <Textarea
-                id={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
-                name={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
-                placeholder={
-                  activeTab === "checkpoints"
-                    ? selectedSubmission?.remarksPlaceholder ||
-                      "Provide details about the compliance evidence"
-                    : "Describe actions taken to address the observation"
-                }
+              <Label htmlFor="progress">Progress (%)</Label>
+              <Input
+                id="progress"
+                name="progress"
+                type="number"
+                min="0"
+                max="100"
+                defaultValue={selectedSubmission.progress}
+                required
                 className="bg-gray-900 border-gray-600"
-                rows={4}
-                value={formdata.remarks}
-                onChange={(e) => {
-                  // let newValue = e.target.value;
-                  // let isNumeric =
-                  //   !Number.isNaN(Number(newValue)) && newValue.trim() !== "";
-
-                  // if (
-                  //   (selectedSubmission.remarksType === "number" ||
-                  //     selectedSubmission.remarksType === "percentage") &&
-                  //   !isNumeric
-                  // ) {
-                  //   setStatus(
-                  //     "Only numeric values are allowed for this checkpoint."
-                  //   );
-                  // } else {
-                  //   if (selectedSubmission.remarksType === "percentage") {
-                  //     if (newValue !== "") {
-                  //     }
-                  //     newValue = `${newValue}%`;
-                  //   }
-                  // }
-
-                  setFormdata((prev) => {
-                    let newValues = { ...prev };
-                    newValues.remarks = e.target.value;
-                    return newValues;
-                  });
-                }}
               />
             </div>
+          )}
 
-            {activeTab === "rbi-audit" && (
-              <div>
-                <Label htmlFor="departmentComments">Department Comments</Label>
-                <Textarea
-                  id="departmentComments"
-                  name="departmentComments"
-                  placeholder="Additional comments from the department"
-                  className="bg-gray-900 border-gray-600"
-                  rows={3}
-                  defaultValue={selectedSubmission.departmentComments || ""}
-                />
-              </div>
-            )}
+          <div>
+            <Label
+              htmlFor={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
+            >
+              {activeTab === "checkpoints"
+                ? selectedSubmission?.isRemarksRequired
+                  ? "Remarks"
+                  : "Remarks (optional)"
+                : "Action Taken"}
+            </Label>
+            <Textarea
+              id={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
+              name={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
+              placeholder={
+                activeTab === "checkpoints"
+                  ? selectedSubmission?.remarksPlaceholder ||
+                    "Provide details about the compliance evidence"
+                  : "Describe actions taken to address the observation"
+              }
+              className="bg-gray-900 border-gray-600"
+              rows={4}
+              value={formdata.remarks}
+              onChange={(e) => {
+                setFormdata((prev) => {
+                  let newValues = { ...prev };
+                  newValues.remarks = e.target.value;
+                  return newValues;
+                });
+              }}
+            />
+          </div>
 
+          {activeTab === "rbi-audit" && (
             <div>
-              <div className="flex justify-between">
-                <Label htmlFor="evidence">
-                  {selectedSubmission?.isAttachmentRequired
-                    ? "Upload Evidence"
-                    : "Upload Evidence (optional)"}
-                </Label>
-
-                {selectedSubmission?.responseTemplate &&
-                  selectedSubmission?.responseTemplate !== "" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() =>
-                        window.open(selectedSubmission.responseTemplate)
-                      }
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  )}
-              </div>
-              <DragAndDrop
-                selectedSubmission={selectedSubmission}
-                selectFiles={selectFiles}
-                processFile={processFile}
+              <Label htmlFor="departmentComments">Department Comments</Label>
+              <Textarea
+                id="departmentComments"
+                name="departmentComments"
+                placeholder="Additional comments from the department"
+                className="bg-gray-900 border-gray-600"
+                rows={3}
+                defaultValue={selectedSubmission.departmentComments || ""}
               />
+            </div>
+          )}
 
-              {formdata.attachments.map((file: File, i: number) => (
-                <div
-                  className="flex items-center justify-between"
-                  key={`uploaded-file-${i}`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm">{file?.name}</span>
-                    <span className="text-xs text-gray-400">
-                      ({(file?.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
+          <div>
+            <div className="flex justify-between">
+              <Label htmlFor="evidence">
+                {selectedSubmission?.isAttachmentRequired
+                  ? "Upload Evidence"
+                  : "Upload Evidence (optional)"}
+              </Label>
+
+              {selectedSubmission?.responseTemplate &&
+                selectedSubmission?.responseTemplate !== "" && (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFormdata((prev) => {
-                        let newData = { ...prev };
-                        newData.attachments = newData.attachments.filter(
-                          (_, index) => index !== i
-                        );
-                        console.log(newData.attachments);
-                        return newData;
-                      });
-                    }}
-                    className="text-red-400 hover:text-red-300"
+                    variant="outline"
+                    onClick={() =>
+                      window.open(selectedSubmission.responseTemplate)
+                    }
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Template
                   </Button>
-                </div>
-              ))}
-            </div>
-
-            {activeTab === "checkpoints" && (
-              <div>
-                <Label htmlFor="expectedClosureDate">
-                  Expected Closure Date
-                </Label>
-                <Input
-                  id="expectedClosureDate"
-                  name="expectedClosureDate"
-                  value={formdata?.expectedClosureDate}
-                  onChange={(e) =>
-                    setFormdata((prev: any) => {
-                      let newdta = { ...prev };
-                      newdta.expectedClosureDate = e.target.value;
-                      return newdta;
-                    })
-                  }
-                  type="date"
-                  required
-                  className="bg-gray-900 border-gray-600"
-                />
-              </div>
-            )}
-
-            {status && status !== "" && (
-              <Alert className="bg-red-900/20 border-red-800 text-red-400">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{status}</AlertDescription>
-              </Alert>
-            )}
-
-            <DialogFooter className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowSubmitDialog(false)}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                disabled={loading}
-              >
-                {loading ? (
-                  <ClipLoader
-                    color={"#000000"}
-                    loading={true}
-                    size={20}
-                    aria-label="Loading Spinner"
-                    data-testid="loader"
-                  />
-                ) : (
-                  "Submit Evidence"
                 )}
-              </Button>
-            </DialogFooter>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+            </div>
+            <DragAndDrop
+              selectedSubmission={selectedSubmission}
+              selectFiles={selectFiles}
+              processFile={processFile}
+            />
+
+            {formdata.attachments.map((file: File, i: number) => (
+              <div
+                className="flex items-center justify-between"
+                key={`uploaded-file-${i}`}
+              >
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-blue-400" />
+                  <span className="text-sm">{file?.name}</span>
+                  <span className="text-xs text-gray-400">
+                    ({(file?.size / 1024).toFixed(1)} KB)
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFormdata((prev) => {
+                      let newData = { ...prev };
+                      newData.attachments = newData.attachments.filter(
+                        (_, index) => index !== i
+                      );
+                      console.log(newData.attachments);
+                      return newData;
+                    });
+                  }}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {status && status !== "" && (
+            <Alert className="bg-red-900/20 border-red-800 text-red-400">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{status}</AlertDescription>
+            </Alert>
+          )}
+
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowSubmitDialog(false)}
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black"
+              disabled={loading}
+            >
+              {loading ? (
+                <ClipLoader
+                  color={"#000000"}
+                  loading={true}
+                  size={20}
+                  aria-label="Loading Spinner"
+                  data-testid="loader"
+                />
+              ) : (
+                "Submit Evidence"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      )}
+    </>
   );
 };
-
-export default SubmissionPopup;
 
 const DragAndDrop = ({ selectFiles, selectedSubmission, processFile }: any) => {
   const [isOver, setIsOver] = useState(false);

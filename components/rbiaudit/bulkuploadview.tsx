@@ -22,9 +22,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 
+const cellWidth = 52;
+
 const Bulkuploadview = ({ data }: any) => {
   return (
-    <DialogContent className="max-w-[90vw] bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-scroll">
+    <DialogContent className="w-full max-w-[90vw] bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-scroll">
       <DialogHeader>
         <DialogTitle>Add New RBI Observation</DialogTitle>
         <DialogDescription className="text-gray-400">
@@ -33,31 +35,58 @@ const Bulkuploadview = ({ data }: any) => {
       </DialogHeader>
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+          display: "flex",
           gap: "10px",
+          width: "100%",
         }}
       >
-        <div>S.No.</div>
-        <Label htmlFor="observationNumber">Observation Number</Label>
-        <Label htmlFor="auditDate">Audit Date</Label>
-        <Label htmlFor="auditType">Audit Type</Label>
-        <Label htmlFor="auditCategory">Audit Category</Label>
-        <Label htmlFor="category">Observation Category</Label>
-        <Label htmlFor="severity">Severity</Label>
-        <Label htmlFor="title">Title</Label>
-        <Label htmlFor="description">Description</Label>
-        <Label htmlFor="recommendation">Recommendation</Label>
-        <Label htmlFor="assignedDepartment">Assigned Department</Label>
-        <Label htmlFor="assignedTo">Assigned To</Label>
-        <Label htmlFor="targetDate">Target Date</Label>
+        <div className={`w-${cellWidth}`}>S.No.</div>
+        <Label
+          htmlFor="observationNumber"
+          className={`w-${cellWidth} bg-red-500`}
+        >
+          Observation Number
+        </Label>
+        <Label htmlFor="auditDate" className={`w-${cellWidth}`}>
+          Audit Date
+        </Label>
+        <Label htmlFor="auditType" className={`w-${cellWidth}`}>
+          Audit Type
+        </Label>
+        <Label htmlFor="auditCategory" className={`w-${cellWidth}`}>
+          Audit Category
+        </Label>
+        <Label htmlFor="category" className={`w-${cellWidth}`}>
+          Observation Category
+        </Label>
+        <Label htmlFor="severity" className={`w-${cellWidth}`}>
+          Severity
+        </Label>
+        <Label htmlFor="title" className={`w-${cellWidth}`}>
+          Title
+        </Label>
+        <Label htmlFor="description" className={`w-${cellWidth}`}>
+          Description
+        </Label>
+        <Label htmlFor="recommendation" className={`w-${cellWidth}`}>
+          Recommendation
+        </Label>
+        <Label htmlFor="assignedDepartment" className={`w-${cellWidth}`}>
+          Assigned Department
+        </Label>
+        <Label htmlFor="assignedTo" className={`w-${cellWidth}`}>
+          Assigned To
+        </Label>
+        <Label htmlFor="targetDate" className={`w-${cellWidth}`}>
+          Target Date
+        </Label>
       </div>
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           gap: "10px",
+          width: "100%",
         }}
       >
         {data?.map((datarow: any, i: number) => (
@@ -71,25 +100,25 @@ const Bulkuploadview = ({ data }: any) => {
 export default Bulkuploadview;
 
 const DataRow = ({ index }: any) => {
+  const className = `w-${cellWidth} bg-gray-900 border-gray-600`;
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
       }}
-      //   className="space-y-4"
       style={{
-        display: "grid",
-        gridTemplateColumns:
-          "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+        display: "flex",
         gap: "10px",
+        width: "100%",
       }}
     >
-      <div>{index + 1}</div>
+      <div className={`w-${cellWidth}`}>{index + 1}</div>
       <Input
         id="observationNumber"
         name="observationNumber"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
         placeholder="RBI/AUDIT/2024/XXX"
       />
 
@@ -98,14 +127,14 @@ const DataRow = ({ index }: any) => {
         name="auditDate"
         type="date"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
       />
 
       <Select name="auditType" required>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select audit type" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700">
+        <SelectContent className={className}>
           <SelectItem value="Statutory Audit">Statutory Audit</SelectItem>
           <SelectItem value="Surprise Inspection">
             Surprise Inspection
@@ -116,10 +145,10 @@ const DataRow = ({ index }: any) => {
       </Select>
 
       <Select name="auditCategory" required defaultValue={undefined}>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700">
+        <SelectContent className={className}>
           <SelectItem value="RMP">Risk Mitigation Plan (RMP)</SelectItem>
           <SelectItem value="IRAR">
             Inspection & Risk Assessment (IRAR)
@@ -130,10 +159,10 @@ const DataRow = ({ index }: any) => {
       </Select>
 
       <Select name="category" required>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700">
+        <SelectContent className={className}>
           <SelectItem value="KYC Compliance">KYC Compliance</SelectItem>
           <SelectItem value="Cybersecurity">Cybersecurity</SelectItem>
           <SelectItem value="Risk Management">Risk Management</SelectItem>
@@ -149,10 +178,10 @@ const DataRow = ({ index }: any) => {
       </Select>
 
       <Select name="severity" required>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select severity" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700">
+        <SelectContent className={className}>
           <SelectItem value="Critical">Critical</SelectItem>
           <SelectItem value="High">High</SelectItem>
           <SelectItem value="Medium">Medium</SelectItem>
@@ -164,7 +193,7 @@ const DataRow = ({ index }: any) => {
         id="title"
         name="title"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
         placeholder="Brief title of the observation"
       />
 
@@ -172,7 +201,7 @@ const DataRow = ({ index }: any) => {
         id="description"
         name="description"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
         placeholder="Detailed description of the observation"
         rows={3}
       />
@@ -181,13 +210,13 @@ const DataRow = ({ index }: any) => {
         id="recommendation"
         name="recommendation"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
         placeholder="Recommended action to address the observation"
         rows={3}
       />
 
       <Select name="assignedDepartment" required>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select department" />
         </SelectTrigger>
         <SelectContent className="bg-gray-800 border-gray-700">
@@ -196,7 +225,7 @@ const DataRow = ({ index }: any) => {
       </Select>
 
       <Select name="assignedTo" required>
-        <SelectTrigger className="bg-gray-900 border-gray-600">
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Select user" />
         </SelectTrigger>
         <SelectContent className="bg-gray-800 border-gray-700">
@@ -209,7 +238,7 @@ const DataRow = ({ index }: any) => {
         name="targetDate"
         type="date"
         required
-        className="bg-gray-900 border-gray-600"
+        className={className}
       />
     </form>
   );
