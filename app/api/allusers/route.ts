@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
 import User from "@/lib/models/user";
-import Department from "@/lib/models/department";
-import { getUser } from "@/lib/utilities";
+import { authenticateUser, createNotification } from "@/lib/utilities";
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    const user = await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -30,20 +21,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    const user = await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -67,10 +51,11 @@ export async function POST(request: Request) {
     const userWithoutPassword = newUser.toObject();
     delete userWithoutPassword.password;
 
-    // await Department.findOneAndUpdate(
-    //   { name: department },
-    //   { $inc: { userCount: 1 } }
-    // );
+    createNotification(
+      newUser._id,
+      `Welcome to Comity. Your profile has been created.`,
+      "low"
+    );
 
     return NextResponse.json(
       { message: "User registered successfully", user: userWithoutPassword },
@@ -92,20 +77,13 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -119,6 +97,10 @@ export async function PATCH(request: Request) {
       { new: false, runValidators: true }
     ).select("-password -refreshToken");
 
+    const notificationMessage = "Your profile has been updated.";
+
+    createNotification(user._id, notificationMessage, "low");
+
     return NextResponse.json({ message: "User updated successfully" });
   } catch (error: any) {
     console.error("Update error:", error);
@@ -131,20 +113,13 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();

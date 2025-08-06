@@ -27,6 +27,7 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
         remarksPlaceholder: "",
         isAttachmentRequired: false,
         responseTemplate: null,
+        evidencePlaceholder: "",
       },
     ],
   });
@@ -48,6 +49,7 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
         remarksPlaceholder: "",
         isAttachmentRequired: false,
         responseTemplate: null,
+        evidencePlaceholder: "",
       };
 
       return newFormData;
@@ -83,84 +85,86 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
     document.body.appendChild(input);
 
     // 2. Define the onchange handler
-    input.onchange = async (event) => {
-      const file = event.target.files[0];
+    input.onchange = (e: any) => processCsv(e.target.files[0], input);
 
-      const text = await file.text();
-      const lines = text
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    input.click();
+  };
 
-      const mainCheckpointHeaders = lines[0]
-        .split(",")
-        .slice(0, 8)
-        .map((h) => h.trim());
+  const processCsv = async (file: File, input: any) => {
+    const text = await file.text();
+    const lines = text
+      .split("\n")
+      .map((line: any) => line.trim())
+      .filter(Boolean);
 
-      const mainCheckpointValues = lines[1]
-        .split(",")
-        .slice(0, 8)
-        .map((v) => v.trim());
+    const mainCheckpointHeaders = lines[0]
+      .split(",")
+      .slice(0, 8)
+      .map((h) => h.trim());
 
-      let regDept = "";
+    const mainCheckpointValues = lines[1]
+      .split(",")
+      .slice(0, 8)
+      .map((v) => v.trim());
+
+    let regDept = "";
+    try {
+      regulatoryDepartments.map((dept: any) => {
+        if (dept.name === mainCheckpointValues[2]) regDept = dept._id;
+      });
+    } catch {}
+
+    const checkpointData = {
+      letterNumber: mainCheckpointValues[0],
+      date: mainCheckpointValues[1],
+      regulatory: regDept,
+      // regulatory: mainCheckpointValues[2],
+      title: mainCheckpointValues[3],
+      details: mainCheckpointValues[4],
+      type: mainCheckpointValues[5],
+      financialYear: mainCheckpointValues[6],
+      frequency: mainCheckpointValues[7],
+      subCheckpoints: [],
+    } as any;
+
+    const subCheckpointHeaders = lines[0]
+      .split(",")
+      .slice(8)
+      .join(",")
+      .split(",")
+      .map((h) => h.trim());
+
+    for (let i = 2; i < lines.length; i++) {
+      const row = lines[i].split(",").map((v: any) => v.trim());
+      const subRow = row.slice(8);
+
+      let department = "";
       try {
-        regulatoryDepartments.map((dept: any) => {
-          if (dept.name === mainCheckpointValues[2]) regDept = dept._id;
+        departments.map((dept: any) => {
+          if (dept.name === subRow[2]) department = dept._id;
         });
       } catch {}
 
-      const checkpointData = {
-        letterNumber: mainCheckpointValues[0],
-        date: mainCheckpointValues[1],
-        regulatory: regDept,
-        // regulatory: mainCheckpointValues[2],
-        title: mainCheckpointValues[3],
-        details: mainCheckpointValues[4],
-        type: mainCheckpointValues[5],
-        financialYear: mainCheckpointValues[6],
-        frequency: mainCheckpointValues[7],
-        subCheckpoints: [],
+      const subCheckpoint = {
+        title: subRow[1],
+        department: department,
+        deadline: subRow[3],
+        isRemarksRequired: subRow[4].toLowerCase() === "true",
+        remarksType: subRow[5],
+        remarksPlaceholder: subRow[6],
+        isAttachmentRequired: subRow[7].toLowerCase() === "true",
+        responseTemplate: null,
       };
 
-      const subCheckpointHeaders = lines[0]
-        .split(",")
-        .slice(8)
-        .join(",")
-        .split(",")
-        .map((h) => h.trim());
+      checkpointData.subCheckpoints.push(subCheckpoint);
+    }
 
-      for (let i = 2; i < lines.length; i++) {
-        const row = lines[i].split(",").map((v) => v.trim());
-        const subRow = row.slice(8);
+    setCheckpointForm(checkpointData);
+    setCreateMode("manual");
 
-        let department = "";
-        try {
-          departments.map((dept: any) => {
-            if (dept.name === subRow[2]) department = dept._id;
-          });
-        } catch {}
-
-        const subCheckpoint = {
-          title: subRow[1],
-          department: department,
-          deadline: subRow[3],
-          isRemarksRequired: subRow[4].toLowerCase() === "true",
-          remarksType: subRow[5],
-          remarksPlaceholder: subRow[6],
-          isAttachmentRequired: subRow[7].toLowerCase() === "true",
-          responseTemplate: null,
-        };
-
-        checkpointData.subCheckpoints.push(subCheckpoint);
-      }
-
-      setCheckpointForm(checkpointData);
-      setCreateMode("manual");
-
+    if (input) {
       document.body.removeChild(input);
-    };
-
-    input.click();
+    }
   };
 
   const downloadBulkTemplate = () => {
@@ -176,7 +180,8 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
     setLoading(true);
     let apiData = { ...checkpointForm };
     await Promise.all(
-      apiData.subCheckpoints?.map(async (spoint) => {
+      apiData.subCheckpoints?.map(async (spoint: any) => {
+        delete spoint.assignedTo;
         if (spoint.responseTemplate) {
           await api
             .fileUpload(spoint.responseTemplate)
@@ -192,8 +197,10 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
       })
     );
 
+    console.log(apiData);
+
     await api
-      .createCheckpoint({ ...checkpointForm })
+      .createCheckpoint({ ...apiData })
       .then((res) => {
         console.log(res);
         setIsCreateDialogOpen(false);
@@ -237,6 +244,7 @@ const usecreate = (store: any, setIsCreateDialogOpen: any) => {
     addSubCheckpoint,
     downloadBulkTemplate,
     handleBulkUpload,
+    processCsv,
     getSpoc,
   };
 };

@@ -17,19 +17,25 @@ const useapi = () => {
     if (response.ok) {
       return await response.json();
     } else {
-      const data = await response.json();
-      throw data.message;
+      try {
+        const data = await response.json();
+        throw data.message;
+      } catch (e) {
+        console.log(e);
+        throw "Server error";
+      }
     }
   };
 
-  const logout = async (email: string, password: string) => {
-    const response = await fetch("/api/auth/logout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const logout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch {}
 
     router.push("/login");
   };
@@ -133,6 +139,10 @@ const useapi = () => {
   const deleteObservation = async (data: {}) =>
     await crud("/api/observation", "DELETE", data);
 
+  const getNotifications = async () => await crud("/api/notification", "GET");
+  const readNotification = async (data: {}) =>
+    await crud("/api/notification/mark-as-read", "PATCH", data);
+
   return {
     login,
     logout,
@@ -141,6 +151,8 @@ const useapi = () => {
     createUser,
     updateUser,
     deleteUser,
+    getNotifications,
+    readNotification,
 
     getDepartments,
     createDepartment,

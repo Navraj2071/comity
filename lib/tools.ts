@@ -10,7 +10,7 @@ export const getSomeValueWithId = (key: string, lookuparr: [], id: string) => {
   return value;
 };
 
-export const userRoles = ["Admin", "Super-admin", "User"];
+export const userRoles = ["Admin", "Super-user", "User"];
 
 export function getFinancialYears(): string[] {
   const currentYear = new Date().getFullYear();

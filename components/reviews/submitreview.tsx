@@ -49,6 +49,24 @@ const ReviewDialog = ({
       });
     setLoading(false);
   };
+  const handleRbiSubmit = async () => {
+    setError("");
+    setLoading(true);
+    await api
+      .updateObservation({
+        status: status === "approve" ? "Closed" : "Pending Closure",
+        comments,
+        _id: selectedReview?._id,
+      })
+      .then((res) => {
+        setShowReviewDialog(false);
+        store.update("observations");
+      })
+      .catch((err) => {
+        setError(`Unable to ${status}`);
+      });
+    setLoading(false);
+  };
 
   useEffect(() => {
     setStatus("approved");
@@ -57,7 +75,7 @@ const ReviewDialog = ({
 
   return (
     <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-      <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white">
+      <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-scroll">
         <DialogHeader>
           <DialogTitle>Review Submission</DialogTitle>
           <DialogDescription className="text-gray-400">
@@ -70,7 +88,8 @@ const ReviewDialog = ({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmit();
+              if (activeTab === "checkpoints") handleSubmit();
+              else handleRbiSubmit();
             }}
             className="space-y-4"
           >
@@ -95,7 +114,7 @@ const ReviewDialog = ({
               <p className="text-white">
                 {activeTab === "checkpoints"
                   ? selectedReview?.submittedBy
-                  : selectedReview.assignedTo}
+                  : store?.tools?.getUserNameFromId(selectedReview?.assignedTo)}
               </p>
             </div>
 
@@ -112,16 +131,17 @@ const ReviewDialog = ({
               </div>
             </div>
 
-            {activeTab === "rbi-audit" && selectedReview.departmentComments && (
-              <div>
-                <Label className="text-gray-400">Department Comments</Label>
-                <div className="bg-gray-900 border border-gray-600 rounded-md p-3 mt-1">
-                  <p className="text-white">
-                    {selectedReview?.departmentComments}
-                  </p>
+            {activeTab === "rbi-audit" &&
+              selectedReview?.departmentComments && (
+                <div>
+                  <Label className="text-gray-400">Department Comments</Label>
+                  <div className="bg-gray-900 border border-gray-600 rounded-md p-3 mt-1">
+                    <p className="text-white">
+                      {selectedReview?.departmentComments}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div>
               <Label className="text-gray-400">Attachments</Label>

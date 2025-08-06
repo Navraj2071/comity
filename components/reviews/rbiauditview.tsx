@@ -1,6 +1,43 @@
-import React from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableBody,
+  TableCell,
+} from "../ui/table";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import {
+  ShieldAlert,
+  ClipboardCheck,
+  FileSearch,
+  AlertOctagon,
+  AlertTriangle,
+} from "lucide-react";
 
-const Rbiauditview = () => {
+const Rbiauditview = ({
+  filteredRbiAuditReviews,
+  setSelectedReview,
+  setShowReviewDialog,
+  store,
+}: any) => {
+  const getRbiCategoryIcon = (category: string) => {
+    switch (category) {
+      case "RMP":
+        return <ShieldAlert className="h-4 w-4 text-yellow-500" />;
+      case "IRAR":
+        return <ClipboardCheck className="h-4 w-4 text-green-500" />;
+      case "SSI":
+        return <FileSearch className="h-4 w-4 text-blue-500" />;
+      case "MNCR":
+        return <AlertOctagon className="h-4 w-4 text-red-500" />;
+      default:
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    }
+  };
+
   return (
     <TabsContent value="rbi-audit" className="mt-0">
       <Table>
@@ -19,9 +56,9 @@ const Rbiauditview = () => {
         </TableHeader>
         <TableBody>
           {filteredRbiAuditReviews.length > 0 ? (
-            filteredRbiAuditReviews.map((review) => (
+            filteredRbiAuditReviews.map((review: any) => (
               <TableRow
-                key={review?.id}
+                key={review?._id}
                 className="border-gray-700 hover:bg-gray-800"
               >
                 <TableCell className="text-white font-mono">
@@ -30,8 +67,8 @@ const Rbiauditview = () => {
                 <TableCell className="text-white">{review?.title}</TableCell>
                 <TableCell className="text-gray-300">
                   <div className="flex items-center gap-1">
-                    {getRbiCategoryIcon(review.auditCategory)}
-                    <span>{review.auditCategory}</span>
+                    {getRbiCategoryIcon(review.category)}
+                    <span>{review.category}</span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -50,27 +87,31 @@ const Rbiauditview = () => {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-gray-300">
-                  {review.assignedTo}
+                  {store?.tools?.getUserNameFromId(review.assignedTo)}
                 </TableCell>
                 <TableCell className="text-gray-300">
-                  {review.assignedDepartment}
+                  {store?.tools?.getDepartmentNameFromId(review.department)}
                 </TableCell>
                 <TableCell className="text-gray-300">
-                  {new Date(review.submittedDate).toLocaleDateString()}
+                  {new Date(review.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-gray-300">
                   {review.progress}%
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    onClick={() => {
-                      setSelectedReview(review);
-                      setShowReviewDialog(true);
-                    }}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                  >
-                    Review
-                  </Button>
+                  {review?.status !== "Closed" ? (
+                    <Button
+                      onClick={() => {
+                        setSelectedReview(review);
+                        setShowReviewDialog(true);
+                      }}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    "---"
+                  )}
                 </TableCell>
               </TableRow>
             ))

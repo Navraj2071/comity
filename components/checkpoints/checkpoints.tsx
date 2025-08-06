@@ -17,23 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Calendar,
-  Building2,
-  Clock,
-  Repeat,
-} from "lucide-react";
+import { Search } from "lucide-react";
 
 import CreateCheckpoint from "./createcheckpoint/createcheckoint";
 import useStore from "@/lib/store/useStore";
-import { getSomeValueWithId } from "@/lib/tools";
 import Datadisplay from "./datadisplay";
+import AccessControl from "./accesscontrol";
 
 export default function CheckpointManagement() {
   const store = useStore();
@@ -72,128 +62,130 @@ export default function CheckpointManagement() {
   };
 
   return (
-    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Compliance Checkpoint Management
-          </h1>
-          <p className="text-gray-400">
-            Create and manage regulatory compliance checkpoints
-          </p>
-        </div>
+    <AccessControl>
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Compliance Checkpoint Management
+            </h1>
+            <p className="text-gray-400">
+              Create and manage regulatory compliance checkpoints
+            </p>
+          </div>
 
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-white">
-                  Compliance Checkpoints
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Manage regulatory requirements and sub-checkpoints
-                </CardDescription>
-              </div>
-              <CreateCheckpoint
-                isCreateDialogOpen={isCreateDialogOpen}
-                setIsCreateDialogOpen={setIsCreateDialogOpen}
-                store={store}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Search and Filters */}
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search checkpoints..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-700 border-gray-600 text-white"
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">
+                    Compliance Checkpoints
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Manage regulatory requirements and sub-checkpoints
+                  </CardDescription>
+                </div>
+                <CreateCheckpoint
+                  isCreateDialogOpen={isCreateDialogOpen}
+                  setIsCreateDialogOpen={setIsCreateDialogOpen}
+                  store={store}
                 />
               </div>
-              <Select
-                value={checkpointTypeFilter}
-                onValueChange={setCheckpointTypeFilter}
-              >
-                <SelectTrigger className="w-40 bg-gray-700 border-gray-600">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="ad-hoc">Ad-hoc</SelectItem>
-                  <SelectItem value="recurring">Recurring</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {checkpointTypeFilter === "ad-hoc" && (
+            </CardHeader>
+            <CardContent>
+              {/* Search and Filters */}
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search checkpoints..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-gray-700 border-gray-600 text-white"
+                  />
+                </div>
                 <Select
-                  value={timeframeFilter}
-                  onValueChange={setTimeframeFilter}
+                  value={checkpointTypeFilter}
+                  onValueChange={setCheckpointTypeFilter}
                 >
                   <SelectTrigger className="w-40 bg-gray-700 border-gray-600">
-                    <SelectValue placeholder="Financial Year" />
+                    <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-700 border-gray-600">
-                    <SelectItem value="all">All Years</SelectItem>
-                    <SelectItem value="2023-2024">FY 2023-2024</SelectItem>
-                    <SelectItem value="2024-2025">FY 2024-2025</SelectItem>
-                    <SelectItem value="2024-2025">FY 2026-2026</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="ad-hoc">Ad-hoc</SelectItem>
+                    <SelectItem value="recurring">Recurring</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
 
-              {checkpointTypeFilter === "recurring" && (
-                <>
+                {checkpointTypeFilter === "ad-hoc" && (
                   <Select
                     value={timeframeFilter}
                     onValueChange={setTimeframeFilter}
                   >
                     <SelectTrigger className="w-40 bg-gray-700 border-gray-600">
-                      <SelectValue placeholder="Frequency" />
+                      <SelectValue placeholder="Financial Year" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="all">All Frequencies</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="half-yearly">Half-Yearly</SelectItem>
-                      <SelectItem value="annually">Annually</SelectItem>
+                      <SelectItem value="all">All Years</SelectItem>
+                      <SelectItem value="2023-2024">FY 2023-2024</SelectItem>
+                      <SelectItem value="2024-2025">FY 2024-2025</SelectItem>
+                      <SelectItem value="2024-2025">FY 2026-2026</SelectItem>
                     </SelectContent>
                   </Select>
+                )}
 
-                  {timeframeFilter !== "all" && (
+                {checkpointTypeFilter === "recurring" && (
+                  <>
                     <Select
-                      value={periodFilter}
-                      onValueChange={setPeriodFilter}
+                      value={timeframeFilter}
+                      onValueChange={setTimeframeFilter}
                     >
                       <SelectTrigger className="w-40 bg-gray-700 border-gray-600">
-                        <SelectValue placeholder="Period" />
+                        <SelectValue placeholder="Frequency" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-700 border-gray-600">
-                        <SelectItem value="all">All Periods</SelectItem>
-                        {getAvailablePeriods().map((period) => (
-                          <SelectItem key={period} value={period}>
-                            {period}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="all">All Frequencies</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="half-yearly">Half-Yearly</SelectItem>
+                        <SelectItem value="annually">Annually</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                </>
-              )}
-            </div>
 
-            <Datadisplay
-              store={store}
-              searchTerm={searchTerm}
-              checkpointTypeFilter={checkpointTypeFilter}
-              timeframeFilter={timeframeFilter}
-              periodFilter={periodFilter}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+                    {timeframeFilter !== "all" && (
+                      <Select
+                        value={periodFilter}
+                        onValueChange={setPeriodFilter}
+                      >
+                        <SelectTrigger className="w-40 bg-gray-700 border-gray-600">
+                          <SelectValue placeholder="Period" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectItem value="all">All Periods</SelectItem>
+                          {getAvailablePeriods().map((period) => (
+                            <SelectItem key={period} value={period}>
+                              {period}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <Datadisplay
+                store={store}
+                searchTerm={searchTerm}
+                checkpointTypeFilter={checkpointTypeFilter}
+                timeframeFilter={timeframeFilter}
+                periodFilter={periodFilter}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </AccessControl>
   );
 }

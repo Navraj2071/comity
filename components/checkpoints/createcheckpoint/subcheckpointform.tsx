@@ -18,6 +18,7 @@ import {
   FileText,
   Settings,
 } from "lucide-react";
+import { useState } from "react";
 const Subcheckpointform = ({ script, store }: any) => {
   const {
     checkpointForm,
@@ -203,72 +204,27 @@ const Subcheckpointform = ({ script, store }: any) => {
 
                 {subCheckpoint.isAttachmentRequired && (
                   <div className="ml-6">
-                    <Label>Response Template (Optional)</Label>
-                    <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-4">
-                      {subCheckpoint.responseTemplate ? (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <FileText className="h-4 w-4 text-blue-400" />
-                            <span className="text-sm">
-                              {subCheckpoint.responseTemplate?.name}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              (
-                              {(
-                                subCheckpoint.responseTemplate?.size / 1024
-                              ).toFixed(1)}{" "}
-                              KB)
-                            </span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              updateSubCheckpoint(
-                                index,
-                                "responseTemplate",
-                                null
-                              )
-                            }
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-gray-400 mb-2">
-                            Upload response template
-                          </p>
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file)
-                                updateSubCheckpoint(
-                                  index,
-                                  "responseTemplate",
-                                  file
-                                );
-                            }}
-                            className="hidden"
-                            id={`template-upload-${index}`}
-                          />
-                          <Label
-                            htmlFor={`template-upload-${index}`}
-                            className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700"
-                          >
-                            Choose File
-                          </Label>
-                          <p className="text-xs text-gray-500 mt-2">
-                            Supported: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
-                          </p>
-                        </div>
-                      )}
+                    <div className="space-y-2">
+                      <Label>Placeholder Text</Label>
+                      <Input
+                        placeholder="Enter placeholder text"
+                        className="bg-gray-700 border-gray-600"
+                        value={subCheckpoint.evidencePlaceholder}
+                        onChange={(e) =>
+                          updateSubCheckpoint(
+                            index,
+                            "evidencePlaceholder",
+                            e.target.value
+                          )
+                        }
+                      />
                     </div>
+                    <Label>Response Template (Optional)</Label>
+                    <DragAndDrop
+                      subCheckpoint={subCheckpoint}
+                      updateSubCheckpoint={updateSubCheckpoint}
+                      index={index}
+                    />
                   </div>
                 )}
               </div>
@@ -281,3 +237,83 @@ const Subcheckpointform = ({ script, store }: any) => {
 };
 
 export default Subcheckpointform;
+
+const DragAndDrop = ({ subCheckpoint, updateSubCheckpoint, index }: any) => {
+  const [isOver, setIsOver] = useState(false);
+  const [dropped, setDropped] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(false);
+    setDropped(true);
+    const file = e.dataTransfer.files?.[0];
+    if (file) updateSubCheckpoint(index, "responseTemplate", file);
+  };
+
+  return (
+    <div
+      className={`mt-2 border-2 border-dashed rounded-lg p-4 ${
+        isOver ? "border-blue-600 bg-gray-900" : "border-gray-600"
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {subCheckpoint.responseTemplate ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <FileText className="h-4 w-4 text-blue-400" />
+            <span className="text-sm">
+              {subCheckpoint.responseTemplate?.name}
+            </span>
+            <span className="text-xs text-gray-400">
+              ({(subCheckpoint.responseTemplate?.size / 1024).toFixed(1)} KB)
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => updateSubCheckpoint(index, "responseTemplate", null)}
+            className="text-red-400 hover:text-red-300"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="text-center">
+          <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+          <p className="text-gray-400 mb-2">Upload response template</p>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) updateSubCheckpoint(index, "responseTemplate", file);
+            }}
+            className="hidden"
+            id={`template-upload-${index}`}
+          />
+          <Label
+            htmlFor={`template-upload-${index}`}
+            className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700"
+          >
+            Choose File
+          </Label>
+          <p className="text-xs text-gray-500 mt-2">
+            Supported: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};

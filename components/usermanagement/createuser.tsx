@@ -24,7 +24,6 @@ import useapi from "../api/api";
 import { Alert, AlertDescription } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ClipLoader } from "react-spinners";
-import { userRoles } from "@/lib/tools";
 
 const CreateUserPopup = ({
   isCreateDialogOpen,
@@ -42,6 +41,8 @@ const CreateUserPopup = ({
 
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  const userRoles = ["Admin", "Super-user", "User"];
 
   const changeValue = (key: string, value: string) => {
     setFormdata((prev: any) => {

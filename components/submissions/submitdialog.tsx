@@ -60,7 +60,7 @@ const SubmissionPopup = ({
     }
     setStatus("");
     setLoading(true);
-    const files = [];
+    const files = [] as string[];
     await Promise.all(
       formdata.attachments.map(async (file) => {
         await api
@@ -70,7 +70,7 @@ const SubmissionPopup = ({
       })
     );
 
-    const apiData = { ...formdata };
+    const apiData = { ...formdata } as any;
     apiData.attachments = files;
     apiData.status = "pending_review";
     apiData.subCheckpoint = selectedSubmission.subCheckpointId;
@@ -129,21 +129,24 @@ const SubmissionPopup = ({
       input.multiple = true;
       input.style.display = "none";
 
-      input.onchange = () => {
-        const files = input.files;
-        if (files && files.length > 0) {
-          setFormdata((prev: any) => {
-            let newData = { ...prev };
-            newData.attachments = Array.from(files);
-            return newData;
-          });
-        }
-        document.body.removeChild(input);
-      };
+      input.onchange = (e) => processFile(input.files || null, input);
 
       document.body.appendChild(input);
       input.click();
     } catch {}
+  };
+
+  const processFile = (files: any, input: any) => {
+    if (files && files.length > 0) {
+      setFormdata((prev: any) => {
+        let newData = { ...prev };
+        newData.attachments = Array.from(files);
+        return newData;
+      });
+    }
+    if (input) {
+      document.body.removeChild(input);
+    }
   };
 
   return (
@@ -254,19 +257,40 @@ const SubmissionPopup = ({
                 name={activeTab === "checkpoints" ? "remarks" : "actionTaken"}
                 placeholder={
                   activeTab === "checkpoints"
-                    ? "Provide details about the compliance evidence"
+                    ? selectedSubmission?.remarksPlaceholder ||
+                      "Provide details about the compliance evidence"
                     : "Describe actions taken to address the observation"
                 }
                 className="bg-gray-900 border-gray-600"
                 rows={4}
                 value={formdata.remarks}
-                onChange={(e) =>
+                onChange={(e) => {
+                  // let newValue = e.target.value;
+                  // let isNumeric =
+                  //   !Number.isNaN(Number(newValue)) && newValue.trim() !== "";
+
+                  // if (
+                  //   (selectedSubmission.remarksType === "number" ||
+                  //     selectedSubmission.remarksType === "percentage") &&
+                  //   !isNumeric
+                  // ) {
+                  //   setStatus(
+                  //     "Only numeric values are allowed for this checkpoint."
+                  //   );
+                  // } else {
+                  //   if (selectedSubmission.remarksType === "percentage") {
+                  //     if (newValue !== "") {
+                  //     }
+                  //     newValue = `${newValue}%`;
+                  //   }
+                  // }
+
                   setFormdata((prev) => {
                     let newValues = { ...prev };
                     newValues.remarks = e.target.value;
                     return newValues;
-                  })
-                }
+                  });
+                }}
               />
             </div>
 
@@ -291,6 +315,7 @@ const SubmissionPopup = ({
                     ? "Upload Evidence"
                     : "Upload Evidence (optional)"}
                 </Label>
+
                 {selectedSubmission?.responseTemplate &&
                   selectedSubmission?.responseTemplate !== "" && (
                     <Button
@@ -306,24 +331,13 @@ const SubmissionPopup = ({
                     </Button>
                   )}
               </div>
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center mt-2">
-                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-gray-400 mb-2">
-                  Drop files here or click to browse
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  onClick={selectFiles}
-                >
-                  Choose Files
-                </Button>
-                <p className="text-xs text-gray-500 mt-2">
-                  Supported formats: PDF, DOCX, XLSX, JPG, PNG (Max 10MB)
-                </p>
-              </div>
-              {formdata.attachments.map((file, i) => (
+              <DragAndDrop
+                selectedSubmission={selectedSubmission}
+                selectFiles={selectFiles}
+                processFile={processFile}
+              />
+
+              {formdata.attachments.map((file: File, i: number) => (
                 <div
                   className="flex items-center justify-between"
                   key={`uploaded-file-${i}`}
@@ -422,3 +436,50 @@ const SubmissionPopup = ({
 };
 
 export default SubmissionPopup;
+
+const DragAndDrop = ({ selectFiles, selectedSubmission, processFile }: any) => {
+  const [isOver, setIsOver] = useState(false);
+  const [dropped, setDropped] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsOver(false);
+    setDropped(true);
+    processFile(e.dataTransfer.files, null);
+  };
+
+  return (
+    <div
+      className={`border-2 border-dashed rounded-lg p-6 text-center mt-2 ${
+        isOver ? "border-blue-600 bg-gray-900" : "border-gray-600"
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+      <p className="text-gray-400 mb-2">Drop files here or click to browse</p>
+      <Button
+        type="button"
+        variant="outline"
+        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+        onClick={selectFiles}
+      >
+        Choose Files
+      </Button>
+      <p className="text-xs text-gray-500 mt-2">
+        Supported formats: PDF, DOCX, XLSX, JPG, PNG (Max 10MB)
+      </p>
+      <p>{selectedSubmission?.evidencePlaceholder || ""}</p>
+    </div>
+  );
+};

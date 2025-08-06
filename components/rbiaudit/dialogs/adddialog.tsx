@@ -57,6 +57,8 @@ const Addialog = ({ audit }: any) => {
     setLoading(false);
   };
 
+  // const users = audit?.store?.db?.allUsers?.filter((user: any) => true )
+
   return (
     <Dialog open={audit?.showAddDialog} onOpenChange={audit?.setShowAddDialog}>
       <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-scroll">

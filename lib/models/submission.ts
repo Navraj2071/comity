@@ -2,7 +2,7 @@ import mongoose, { Schema, models, model, Document, Types } from "mongoose";
 
 export interface ISubmission extends Document {
   subCheckpoint: Types.ObjectId;
-  assignedTo: Types.ObjectId;
+
   status: "";
   remarks: "";
   attachments: [];
@@ -10,6 +10,7 @@ export interface ISubmission extends Document {
   submittedBy: Types.ObjectId;
   createdAt: Date;
   comments: "";
+  complianceComments: "";
 }
 
 const SubmissionSchema = new Schema<ISubmission>(
@@ -19,7 +20,6 @@ const SubmissionSchema = new Schema<ISubmission>(
       ref: "SubCheckpoint",
       required: true,
     },
-    assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
     status: { type: String },
     remarks: { type: String },
     attachments: { type: [String] },
@@ -29,6 +29,7 @@ const SubmissionSchema = new Schema<ISubmission>(
       ref: "User",
     },
     comments: { type: String },
+    complianceComments: { type: String },
   },
   {
     timestamps: true,

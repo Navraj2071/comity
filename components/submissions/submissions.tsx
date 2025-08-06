@@ -42,7 +42,6 @@ export default function SubmissionsPage() {
 
   const poppulateSubmissions = () => {
     const checkpoints = store?.db?.checkpoints || [];
-    const submittedSubmissions = store?.db?.submissions || [];
 
     let submissionData = [];
     let yearsData = [] as any[];
@@ -50,31 +49,31 @@ export default function SubmissionsPage() {
     if (checkpoints) {
       checkpoints?.map((cpoint: any) => {
         cpoint.subCheckpoints.map((subpoint: any) => {
-          let status = "pending";
+          let status =
+            store?.tools?.getCheckpointStatus(subpoint._id) || "pending";
           let attachments = [] as any[];
           let expectedClosuredate = "";
           let createdAt = "";
-          let assignedTo = "";
           let submissionId = "";
           let remarks = "";
           let expectedClosureDate = "";
           let submittedBy = "";
+          let submissionStatus = "";
 
-          submittedSubmissions?.map((submitted: any) => {
-            if (submitted.subCheckpoint === subpoint._id) {
-              status = submitted.status;
-              attachments = submitted.attachments;
-              expectedClosuredate = submitted.expectedClosuredate;
-              createdAt = submitted.createdAt;
-              assignedTo = submitted.assignedTo;
-              submissionId = submitted.id;
-              remarks = submitted.remarks;
-              expectedClosureDate = submitted.expectedClosureDate;
-              submittedBy = store?.tools?.getUserNameFromId(
-                submitted.submittedBy
-              );
-            }
-          });
+          const submitted = store?.tools?.getLatestSubmission(subpoint._id);
+
+          if (submitted) {
+            attachments = submitted.attachments;
+            expectedClosuredate = submitted.expectedClosuredate;
+            createdAt = submitted.createdAt;
+            submissionId = submitted._id;
+            remarks = submitted.remarks;
+            expectedClosureDate = submitted.expectedClosureDate;
+            submittedBy = store?.tools?.getUserNameFromId(
+              submitted.submittedBy
+            );
+            submissionStatus = submitted.status;
+          }
 
           submissionData.push({
             id: subpoint._id,
@@ -94,13 +93,18 @@ export default function SubmissionsPage() {
             department: store?.tools?.getDepartmentNameFromId(
               subpoint?.department
             ),
+            departmentId: subpoint?.department,
             status: status,
             remarks: remarks,
             attachments,
             expectedClosuredate,
             createdAt,
-            assignedTo,
+            assignedTo: subpoint.assignedTo,
             submissionId,
+            remarksPlaceholder: subpoint?.remarksPlaceholder,
+            remarksType: subpoint?.remarksType,
+            submissionStatus,
+            evidencePlaceholder: subpoint?.evidencePlaceholder,
           });
 
           if (
@@ -125,7 +129,12 @@ export default function SubmissionsPage() {
   useEffect(() => {
     poppulateSubmissions();
     poppulateRBIAuditSubmissions();
-  }, [store.db.checkpoints, store.db.submissions, store?.db?.observations]);
+  }, [
+    store.db.checkpoints,
+    store.db.submissions,
+    store?.db?.observations,
+    store?.db?.user,
+  ]);
 
   const filterRbiAuditSubmissions = () => {
     let filtered = [...rbiAuditSubmissions];
@@ -148,13 +157,22 @@ export default function SubmissionsPage() {
         pending: ["Open", "In Progress"],
         submitted: ["Pending Closure"],
         overdue: ["Overdue"],
-      };
+      } as any;
 
       if (statusFilter in statusMap) {
-        filtered = filtered.filter((sub) =>
+        filtered = filtered.filter((sub: any) =>
           statusMap[statusFilter].includes(sub.status)
         );
       }
+    }
+
+    // User filter
+
+    const user = store?.db?.user;
+    if (user) {
+      filtered = filtered.filter((sub: any) => sub.assignedTo === user._id);
+    } else {
+      filtered = [];
     }
 
     setFilteredRbiAuditSubmissions(filtered);
@@ -162,7 +180,7 @@ export default function SubmissionsPage() {
 
   useEffect(() => {
     filterRbiAuditSubmissions();
-  }, [rbiAuditSubmissions, searchTerm, statusFilter]);
+  }, [rbiAuditSubmissions, searchTerm, statusFilter, store?.db?.user]);
 
   const getFinancialYear = () => {
     const now = new Date();
@@ -173,7 +191,7 @@ export default function SubmissionsPage() {
   const finyear = getFinancialYear();
 
   return (
-    <main className="flex-1 p-6">
+    <main className="flex-1 p-6 overflow-auto">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -226,7 +244,7 @@ export default function SubmissionsPage() {
           </TabsList>
 
           <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="pt-6 overflow-scroll max-h-[70vh] overflow-y-scroll">
+            <CardContent className="pt-6">
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex-1 min-w-64">
                   <div className="relative">

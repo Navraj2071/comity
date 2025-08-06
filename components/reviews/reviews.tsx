@@ -13,15 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  AlertTriangle,
-  AlertOctagon,
-  ShieldAlert,
-  ClipboardCheck,
-  FileSearch,
-} from "lucide-react";
-import { getRBIObservations, updateRBIObservation } from "@/lib/storage";
+import { Search } from "lucide-react";
 import useStore from "@/lib/store/useStore";
 import ViewPopup from "../submissions/viewdialog";
 import Checkpointsview from "./checkpointsview";
@@ -46,7 +38,6 @@ export default function ReviewsPage() {
 
   const poppulateReviews = () => {
     const checkpoints = store?.db?.checkpoints;
-    const submittedSubmissions = store?.db?.submissions;
 
     let submissionData = [] as any[];
     let yearsData = [] as any[];
@@ -65,7 +56,8 @@ export default function ReviewsPage() {
           let submittedBy = "";
           let submittedDate = "";
 
-          submittedSubmissions?.map((submitted: any) => {
+          const submitted = store?.tools?.getLatestSubmission(subpoint?._id);
+          if (submitted) {
             if (submitted.subCheckpoint === subpoint._id) {
               status = submitted.status;
               attachments = submitted.attachments;
@@ -100,6 +92,7 @@ export default function ReviewsPage() {
                 department: store?.tools?.getDepartmentNameFromId(
                   subpoint?.department
                 ),
+                departmentId: subpoint?.department,
                 submittedDate: submittedDate,
                 submittedBy: submittedBy,
                 status: status,
@@ -119,50 +112,27 @@ export default function ReviewsPage() {
                 yearsData.push(cpoint.financialYear);
               }
             }
-          });
-
-          setReviews(submissionData);
-          setFinancialYears(yearsData);
+          }
         });
+
+        setReviews(submissionData);
+        setFinancialYears(yearsData);
       });
     }
   };
 
+  const poppulateRbiAuditReviews = () => {
+    setRbiAuditReviews(store?.db?.observations);
+  };
+
   useEffect(() => {
     poppulateReviews();
-  }, [store.db.checkpoints, store.db.submissions]);
+    poppulateRbiAuditReviews();
+  }, [store?.db?.checkpoints, store?.db?.submissions, store?.db?.observations]);
 
-  // useEffect(() => {
-  //   // Load RBI audit reviews
-  //   const rbiObservations = getRBIObservations();
-  //   const pendingReviewObservations = rbiObservations
-  //     .filter((obs) => obs.status === "Pending Closure")
-  //     .map((obs) => ({
-  //       id: obs.id,
-  //       observationNumber: obs.observationNumber,
-  //       title: obs.title,
-  //       auditCategory: obs.auditCategory || "RMP",
-  //       severity: obs.severity,
-  //       status: obs.status,
-  //       targetDate: obs.targetDate,
-  //       progress: obs.progress || 0,
-  //       assignedDepartment: obs.assignedDepartment,
-  //       assignedTo: obs.assignedTo,
-  //       description: obs.description,
-  //       recommendation: obs.recommendation,
-  //       actionTaken: obs.actionTaken || "",
-  //       departmentComments: obs.departmentComments || "",
-  //       evidenceUploaded: obs.evidenceUploaded || [],
-  //       submittedDate: obs.lastUpdated,
-  //     }));
-
-  //   setRbiAuditReviews(pendingReviewObservations);
-  //   setFilteredRbiAuditReviews(pendingReviewObservations);
-  // }, []);
-
-  // useEffect(() => {
-  //   filterRbiAuditReviews();
-  // }, [rbiAuditReviews, searchTerm, statusFilter, selectedFinancialYear]);
+  useEffect(() => {
+    filterRbiAuditReviews();
+  }, [rbiAuditReviews, searchTerm, statusFilter, selectedFinancialYear]);
 
   const filterRbiAuditReviews = () => {
     let filtered = rbiAuditReviews;
@@ -170,7 +140,7 @@ export default function ReviewsPage() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
-        (rev) =>
+        (rev: any) =>
           rev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           rev.observationNumber
             .toLowerCase()
@@ -180,21 +150,6 @@ export default function ReviewsPage() {
     }
 
     setFilteredRbiAuditReviews(filtered);
-  };
-
-  const getRbiCategoryIcon = (category: string) => {
-    switch (category) {
-      case "RMP":
-        return <ShieldAlert className="h-4 w-4 text-yellow-500" />;
-      case "IRAR":
-        return <ClipboardCheck className="h-4 w-4 text-green-500" />;
-      case "SSI":
-        return <FileSearch className="h-4 w-4 text-blue-500" />;
-      case "MNCR":
-        return <AlertOctagon className="h-4 w-4 text-red-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    }
   };
 
   const getFinancialYear = () => {
@@ -326,9 +281,15 @@ export default function ReviewsPage() {
                 setSelectedReview={setSelectedReview}
                 setShowReviewDialog={setShowReviewDialog}
                 setIsViewSubmission={setIsViewSubmission}
+                store={store}
               />
 
-              {/* <Rbiauditview/> */}
+              <Rbiauditview
+                filteredRbiAuditReviews={filteredRbiAuditReviews}
+                setSelectedReview={setSelectedReview}
+                setShowReviewDialog={setShowReviewDialog}
+                store={store}
+              />
             </CardContent>
           </Card>
         </Tabs>

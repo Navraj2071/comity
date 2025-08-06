@@ -2,22 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
+import { createClient } from "@supabase/supabase-js";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-// Define the directory where files will be stored.
-// It's good practice to use the /tmp directory for temporary files.
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+
+const s3 = new S3Client({
+  forcePathStyle: true,
+  region: process.env.AWS_REGION!,
+  endpoint: process.env.SUPABASE_S3_ENPOINT!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // Ensure the upload directory exists.
-    // The `recursive: true` option creates parent directories if they don't exist.
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
-    // Get the form data from the request.
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-
-    // Check if a file was provided.
     if (!file) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
@@ -32,25 +35,37 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Convert the file data to a Buffer.
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Generate a unique identifier for the file.
     const uniqueId = randomUUID();
-    // Get the file extension from the original filename.
     const extension = file.name.split(".").pop() || "tmp";
     const filename = `${uniqueId}.${extension}`;
 
-    // Define the full path where the file will be saved.
+    if (process.env.ENV === "production") {
+      const uploadParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Key: filename,
+        Body: buffer,
+        ContentType: file.type,
+      };
+
+      await s3.send(new PutObjectCommand(uploadParams));
+
+      const fileUrl = `${process.env.SUPABASE_FILE_ENPOINT}${filename}`;
+      return NextResponse.json(
+        {
+          message: "File uploaded to S3 successfully.",
+          url: fileUrl,
+        },
+        { status: 201 }
+      );
+    }
+
+    console.log("local environment");
+
     const filepath = join(UPLOAD_DIR, filename);
+    await mkdir(UPLOAD_DIR, { recursive: true });
 
-    // Write the file to the filesystem.
     await writeFile(filepath, buffer);
-
-    console.log(`File uploaded successfully: ${filepath}`);
-
-    // Return a success response with the unique ID of the uploaded file.
     return NextResponse.json(
       {
         message: "File uploaded successfully.",
@@ -63,9 +78,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "File upload failed." }, { status: 500 });
   }
 }
-
-// 2. File Retrieval Endpoint: app/api/upload/[fileId]/route.ts
-// This dynamic route handles GET requests to retrieve a file by its ID.
 
 import { readdir, readFile } from "fs/promises";
 

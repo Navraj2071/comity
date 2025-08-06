@@ -34,21 +34,23 @@ const Datadisplay = ({
         .includes(searchTerm.toLowerCase())
   );
 
-  const activeCheckpoints = {};
+  const [activeCheckpoints, setActiveCheckpoints] = useState<any>({});
 
   const poppulateActiveCheckpoints = () => {
+    let acps = {} as any;
     checkpoints?.map((cpoint: any) => {
       cpoint?.subCheckpoints?.map((subpoint: any) => {
-        if (subpoint.status === "pending") {
-          if (activeCheckpoints[subpoint.department]) {
-            activeCheckpoints[subpoint.department] =
-              activeCheckpoints[subpoint.department] + 1;
+        const status = store?.tools?.getCheckpointStatus(subpoint._id);
+        if (status !== "closed" && status !== "submitted") {
+          if (subpoint.department in acps) {
+            acps[subpoint.department] += 1;
           } else {
-            activeCheckpoints[subpoint.department] = 1;
+            acps[subpoint.department] = 1;
           }
         }
       });
     });
+    setActiveCheckpoints(acps);
   };
 
   useEffect(() => {

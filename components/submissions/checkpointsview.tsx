@@ -36,6 +36,7 @@ const Checkpointsview = ({
     periodFilter,
     selectedFinancialYear,
     submissions,
+    store?.db?.user,
   ]);
 
   const filterSubmissions = () => {
@@ -104,7 +105,29 @@ const Checkpointsview = ({
     }
 
     // Filter to show only submissions assigned to the current user
-    // filtered = filtered.filter((sub) => sub.assignedTo === user.name);
+    filtered = filtered.filter((sub) => {
+      const user = store?.db?.user;
+      const departments = store?.db?.departments;
+      let isValid = false;
+
+      if (user) {
+        if (sub.assignedTo === user._id) {
+          isValid = true;
+        } else if (user.role === "Super-user") {
+          isValid = true;
+        } else {
+          departments?.map((dept: any) => {
+            if (dept._id === sub.departmentId && dept.spoc === user._id) {
+              isValid = true;
+            }
+          });
+        }
+      } else {
+        filtered = [];
+      }
+
+      return isValid;
+    });
 
     setFilteredSubmissions(filtered);
   };
@@ -215,29 +238,29 @@ const CheckpointRow = ({
       </TableCell>
       <TableCell className="text-right">
         {submission.status !== "submitted" &&
-          submission.status !== "pending_review" && (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  setSelectedSubmission(submission);
-                  setShowSubmitDialog(true);
-                }}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
-              >
-                Submit
-              </Button>
-              <Button
-                onClick={() => {
-                  setSelectedSubmission(submission);
-                  setIsAssignDialog(true);
-                }}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
-              >
-                Assign
-              </Button>
-            </div>
-          )}
-        {submission?.status !== "pending" && (
+        submission.status !== "pending_review" &&
+        submission.submissionStatus !== "pending_review" ? (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setSelectedSubmission(submission);
+                setShowSubmitDialog(true);
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              Submit
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedSubmission(submission);
+                setIsAssignDialog(true);
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              Assign
+            </Button>
+          </div>
+        ) : (
           <Button
             variant="outline"
             className="border-gray-600 text-gray-300 hover:bg-gray-800"

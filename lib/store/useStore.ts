@@ -8,7 +8,7 @@ import usestoretools from "./usestoretools";
 const useStore = () => {
   const api = useapi();
 
-  const [db, setDb] = useState({
+  const [db, setDb] = useState<any>({
     user: null,
     allUsers: [],
     departments: [],
@@ -17,6 +17,7 @@ const useStore = () => {
     sops: [],
     submissions: [],
     observations: [],
+    notifications: [],
   });
 
   const [loading, setloading] = useState(false);
@@ -30,13 +31,14 @@ const useStore = () => {
     sops: api.getSops,
     submissions: api.getSubmission,
     observations: api.getObservation,
-  };
+    notifications: api.getNotifications,
+  } as any;
 
   const fetchDataFromAPI = async (table: string) => {
     fetchFunctions[table]()
 
       .then((res: any) => {
-        setDb((prev: {}) => {
+        setDb((prev: any) => {
           let newData = { ...prev };
 
           newData[table] = res[table];
@@ -56,7 +58,7 @@ const useStore = () => {
     if (!data || data === "undefined") {
       fetchDataFromAPI(table);
     } else {
-      setDb((prev: {}) => {
+      setDb((prev: any) => {
         let newData = { ...prev };
 
         newData[table] = JSON.parse(data);
@@ -68,6 +70,7 @@ const useStore = () => {
 
   const poppulateAllData = async () => {
     setloading(true);
+
     await Promise.all(
       Object.keys(fetchFunctions).map(async (key) => {
         await fetchDataFromAPI(key);

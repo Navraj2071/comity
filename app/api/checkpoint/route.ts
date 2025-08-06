@@ -3,23 +3,18 @@ import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
 import Checkpoint from "@/lib/models/checkpoint";
 import SubCheckpoint from "@/lib/models/subcheckpoint";
-import { getUser } from "@/lib/utilities";
+import { authenticateUser, createNotification } from "@/lib/utilities";
+import Department from "@/lib/models/department";
+import User from "@/lib/models/user";
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -42,20 +37,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-  let user;
-  try {
-    user = await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -69,9 +57,19 @@ export async function POST(request: Request) {
 
     await Promise.all(
       data?.subCheckpoints?.map(async (subpoint: any) => {
-        await SubCheckpoint.create({
+        const spoint = await SubCheckpoint.create({
           checkpoint: newCheckpoint._id,
           ...subpoint,
+        });
+
+        Department.findById(spoint.department).then((DepRes) => {
+          User.findById(DepRes.spoc).then((userRes) => {
+            createNotification(
+              userRes._id,
+              `A new Checkpoint has been created for your Department (${DepRes.name}).\n\nTitle: ${spoint.title}\n\nThe checkpoint has been assigned to you because you are the SPOC of your department.`,
+              "low"
+            );
+          });
         });
       })
     );
@@ -94,20 +92,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -138,20 +129,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();

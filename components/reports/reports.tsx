@@ -25,8 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header/header";
 import { PieChart } from "@/components/pie-chart";
 import {
   FileText,
@@ -47,22 +45,12 @@ import {
   getHalfYears,
   getYears,
 } from "@/lib/storage";
-import useStore from "@/lib/store/useStore";
 import useReports from "./useReports";
+import LoadingPage from "@/app/loading";
 
 export default function ReportsPage() {
-  const { user } = useReports();
-
-  const [reportFilters, setReportFilters] = useState({
-    dateRange: "last-30-days",
-    department: "all",
-    regulatory: "all",
-    status: "all",
-    checkpointType: "ad-hoc" as CheckpointType,
-    financialYear: "",
-    frequency: "monthly",
-    period: "",
-  });
+  const { store, complianceData, reportFilters, setReportFilters } =
+    useReports();
 
   const getPercentageColor = (percentage: number) => {
     if (percentage >= 80) return "text-green-400";
@@ -76,112 +64,6 @@ export default function ReportsPage() {
   const quarters = getQuarters();
   const halfYears = getHalfYears();
   const years = getYears();
-
-  // Sample data for reports
-  const complianceData = {
-    overview: {
-      totalCheckpoints: 25,
-      compliant: 18,
-      pending: 4,
-      overdue: 2,
-      nonCompliant: 1,
-      complianceRate: 72,
-    },
-    byRegulatory: [
-      {
-        name: "RBI",
-        total: 8,
-        compliant: 6,
-        pending: 1,
-        overdue: 1,
-        nonCompliant: 0,
-        rate: 75,
-      },
-      {
-        name: "NPCI",
-        total: 6,
-        compliant: 4,
-        pending: 1,
-        overdue: 1,
-        nonCompliant: 0,
-        rate: 67,
-      },
-      {
-        name: "UIDAI",
-        total: 5,
-        compliant: 4,
-        pending: 1,
-        overdue: 0,
-        nonCompliant: 0,
-        rate: 80,
-      },
-      {
-        name: "CSITE",
-        total: 3,
-        compliant: 2,
-        pending: 1,
-        overdue: 0,
-        nonCompliant: 0,
-        rate: 67,
-      },
-      {
-        name: "IDRBT",
-        total: 3,
-        compliant: 2,
-        pending: 0,
-        overdue: 0,
-        nonCompliant: 1,
-        rate: 67,
-      },
-    ],
-    byDepartment: [
-      {
-        name: "IT",
-        total: 12,
-        compliant: 8,
-        pending: 2,
-        overdue: 1,
-        nonCompliant: 1,
-        rate: 67,
-      },
-      {
-        name: "Operations",
-        total: 8,
-        compliant: 6,
-        pending: 1,
-        overdue: 1,
-        nonCompliant: 0,
-        rate: 75,
-      },
-      {
-        name: "Legal",
-        total: 6,
-        compliant: 5,
-        pending: 1,
-        overdue: 0,
-        nonCompliant: 0,
-        rate: 83,
-      },
-      {
-        name: "HR",
-        total: 4,
-        compliant: 3,
-        pending: 1,
-        overdue: 0,
-        nonCompliant: 0,
-        rate: 75,
-      },
-      {
-        name: "Finance",
-        total: 3,
-        compliant: 2,
-        pending: 1,
-        overdue: 0,
-        nonCompliant: 0,
-        rate: 67,
-      },
-    ],
-  };
 
   const generateReport = async () => {
     try {
@@ -281,6 +163,8 @@ export default function ReportsPage() {
     }
   };
 
+  if (!complianceData) return <LoadingPage />;
+
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -375,13 +259,14 @@ export default function ReportsPage() {
                           </SelectTrigger>
                           <SelectContent className="bg-gray-700 border-gray-600">
                             <SelectItem value="all">All Departments</SelectItem>
-                            <SelectItem value="IT">IT</SelectItem>
-                            <SelectItem value="Operations">
-                              Operations
-                            </SelectItem>
-                            <SelectItem value="Legal">Legal</SelectItem>
-                            <SelectItem value="HR">HR</SelectItem>
-                            <SelectItem value="Finance">Finance</SelectItem>
+                            {store?.db?.departments?.map((dept: any) => (
+                              <SelectItem
+                                value={dept.name}
+                                key={`dept-${dept._id}`}
+                              >
+                                {dept.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -711,7 +596,13 @@ export default function ReportsPage() {
                   complianceData.overview.complianceRate
                 )}`}
               >
-                {complianceData.overview.complianceRate}%
+                {complianceData?.overview?.totalCheckpoints > 0
+                  ? (
+                      (100 * complianceData?.overview?.compliant) /
+                      complianceData?.overview?.totalCheckpoints
+                    ).toFixed()
+                  : 0}
+                %
               </div>
               <p className="text-xs text-gray-400">Compliance Rate</p>
             </CardContent>
@@ -778,25 +669,32 @@ export default function ReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {complianceData.byRegulatory.map((reg) => (
-                    <TableRow key={reg.name} className="border-gray-700">
-                      <TableCell className="text-white font-medium">
-                        {reg.name}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {reg.total}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`font-medium ${getPercentageColor(
-                            reg.rate
-                          )}`}
-                        >
-                          {reg.rate}%
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {complianceData.byRegulatory.map((reg: any) => {
+                    const rate = (
+                      reg?.total > 1
+                        ? ((100 * reg?.compliant) / reg.total).toFixed()
+                        : 0
+                    ) as number;
+                    return (
+                      <TableRow key={reg.name} className="border-gray-700">
+                        <TableCell className="text-white font-medium">
+                          {reg.name}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {reg.total}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`font-medium ${getPercentageColor(
+                              rate
+                            )}`}
+                          >
+                            {rate}%
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -827,34 +725,41 @@ export default function ReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {complianceData.byDepartment.map((dept) => (
-                  <TableRow key={dept.name} className="border-gray-700">
-                    <TableCell className="text-white font-medium">
-                      {dept.name}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {dept.total}
-                    </TableCell>
-                    <TableCell className="text-green-400">
-                      {dept.compliant}
-                    </TableCell>
-                    <TableCell className="text-yellow-400">
-                      {dept.pending}
-                    </TableCell>
-                    <TableCell className="text-orange-400">
-                      {dept.overdue}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`font-medium ${getPercentageColor(
-                          dept.rate
-                        )}`}
-                      >
-                        {dept.rate}%
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {complianceData.byDepartment.map((dept: any) => {
+                  const rate = (
+                    dept?.total > 1
+                      ? ((100 * dept?.compliant) / dept.total).toFixed()
+                      : 0
+                  ) as number;
+                  return (
+                    <TableRow key={dept.name} className="border-gray-700">
+                      <TableCell className="text-white font-medium">
+                        {dept.name}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        {dept.total}
+                      </TableCell>
+                      <TableCell className="text-green-400">
+                        {dept.compliant}
+                      </TableCell>
+                      <TableCell className="text-yellow-400">
+                        {dept.pending}
+                      </TableCell>
+                      <TableCell className="text-orange-400">
+                        {dept.overdue}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`font-medium ${getPercentageColor(
+                            dept.rate
+                          )}`}
+                        >
+                          {dept.rate}%
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

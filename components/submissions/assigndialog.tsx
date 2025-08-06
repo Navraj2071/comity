@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, FileText, Trash2, Download } from "lucide-react";
-import { updateSubCheckpoint, getRBIObservations } from "@/lib/storage";
 import useapi from "../api/api";
 import { Alert, AlertDescription } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -38,21 +34,36 @@ const AssignDialog = ({
 
   const [assignedUser, setAssignedUser] = useState("");
 
-  const users = store?.db?.allUsers || [];
+  const [users, setUsers] = useState<any>(store?.db?.allUsers || []);
+
+  useEffect(() => {
+    let applicableUsers = [] as any[];
+    store?.db?.allUsers?.map((user: any) => {
+      if (user.department === selectedSubmission?.departmentId) {
+        store?.db?.departments?.map((dept: any) => {
+          if (dept._id === user.department && dept.head !== user._id) {
+            applicableUsers.push(user);
+          }
+        });
+      }
+    });
+
+    setUsers(applicableUsers);
+  }, [store?.db, selectedSubmission]);
 
   const handleSubmit = async () => {
     setStatus("");
     setLoading(true);
     await api
-      .updateSubmission({
-        _id: selectedSubmission.submissionId,
+      .updateSubCheckpoint({
+        _id: selectedSubmission.id,
         assignedTo: assignedUser,
       })
       .then((res) => {
         setIsAssignDialog(false);
         store.update("submissions");
       })
-      .catch((err) => console.log(err));
+      .catch((err) => setStatus(err.message));
 
     setLoading(false);
   };

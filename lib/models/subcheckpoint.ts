@@ -10,7 +10,9 @@ export interface ISubCheckpoint extends Document {
   remarksPlaceholder: "";
   isAttachmentRequired: boolean;
   responseTemplate: "";
+  evidencePlaceholder: "";
   submittedBy: Types.ObjectId;
+  assignedTo: Types.ObjectId;
 }
 
 const SubCheckpointSchema = new Schema<ISubCheckpoint>({
@@ -31,6 +33,8 @@ const SubCheckpointSchema = new Schema<ISubCheckpoint>({
   remarksPlaceholder: { type: String },
   isAttachmentRequired: { type: Boolean },
   responseTemplate: { type: String },
+  evidencePlaceholder: { type: String },
+  assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
   submittedBy: {
     type: Schema.Types.ObjectId,
     ref: "User",

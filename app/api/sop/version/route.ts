@@ -1,24 +1,17 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
-import { getUser } from "@/lib/utilities";
+import { authenticateUser } from "@/lib/utilities";
 import SOPVersion from "@/lib/models/sopversion";
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-  let user;
-  try {
-    user = await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -51,20 +44,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();
@@ -95,20 +81,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const { user, message, error } = await authenticateUser();
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { message: "No access token provided" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await getUser(accessToken);
-  } catch (e) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (error || !user) {
+    const response = NextResponse.json({ message }, { status: 401 });
+    response.cookies.delete("accessToken");
+    response.cookies.delete("refreshToken");
+    return response;
   }
 
   await connectDB();

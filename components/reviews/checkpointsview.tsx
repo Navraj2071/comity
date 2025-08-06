@@ -21,6 +21,7 @@ const Checkpointsview = ({
   setSelectedReview,
   setShowReviewDialog,
   setIsViewSubmission,
+  store,
 }: any) => {
   const [filteredSubmissions, setFilteredSubmissions] = useState<any[]>([]);
 
@@ -33,6 +34,7 @@ const Checkpointsview = ({
     periodFilter,
     selectedFinancialYear,
     submissions,
+    store?.db?.user,
   ]);
 
   const filterSubmissions = () => {
@@ -101,10 +103,29 @@ const Checkpointsview = ({
     }
 
     // Filter to show only submissions assigned to the current user
-    // filtered = filtered.filter((sub) => sub.assignedTo === user.name);
+    const user = store?.db?.user;
+    if (user) {
+      filtered = filtered.filter((sub) => {
+        let isValid = false;
+        if (user?.role === "Super-user") {
+          isValid = true;
+        } else {
+          store?.db?.departments?.map((dept: any) => {
+            if (sub.departmentId === dept._id && dept.head === user._id) {
+              isValid = true;
+            }
+          });
+        }
+        return isValid;
+      });
+    } else {
+      filtered = [];
+    }
 
     setFilteredSubmissions(filtered);
   };
+
+  if (!store?.db?.user) return <div>Loading...</div>;
 
   return (
     <TabsContent value="checkpoints" className="mt-0">

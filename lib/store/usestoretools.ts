@@ -1,4 +1,4 @@
-import React from "react";
+import { getNextDeadline } from "../tools";
 
 const usestoretools = (db: any) => {
   const getUserDepartment = (userId: string) => {
@@ -58,16 +58,16 @@ const usestoretools = (db: any) => {
   const getRegBodyNameFromId = (deptId: string) => {
     let name = "";
 
-    db?.regulatoryDepartments?.map((user: any) => {
-      if (user._id === deptId) {
-        name = user.name;
+    db?.regulatoryDepartments?.map((regbody: any) => {
+      if (regbody._id === deptId) {
+        name = regbody.name;
       }
     });
     return name;
   };
 
   const getlatestSopVersion = (sop: any) => {
-    let latest = {};
+    let latest = {} as any;
     sop?.versions?.map((version: any) => {
       if (latest.createdAt) {
         if (new Date(version.createdAt) > new Date(latest.createdAt)) {
@@ -80,6 +80,61 @@ const usestoretools = (db: any) => {
     return latest;
   };
 
+  const getLatestSubmission = (subpointId: string) => {
+    let submission = null as any;
+    db?.submissions?.map((sub: any) => {
+      if (sub.subCheckpoint === subpointId) {
+        try {
+          if (!submission) {
+            submission = { ...sub };
+          } else if (new Date(sub.createdAt) > new Date(submission.createdAt)) {
+            submission = { ...sub };
+          }
+        } catch {}
+      }
+    });
+    return submission;
+  };
+
+  const getCheckpointStatus = (subpointId: string) => {
+    let status = "pending";
+    // pending, pending_review, approved, rejected, submitted, overdue;
+
+    const submission = getLatestSubmission(subpointId);
+
+    if (submission) {
+      if (submission.status === "closed") status = "submitted";
+      else status = submission.status;
+    }
+
+    let deadline = new Date();
+
+    db?.checkpoints?.map((cpoint: any) => {
+      cpoint?.subCheckpoints?.map((subpoint: any) => {
+        if (subpoint._id === subpointId) {
+          if (cpoint.type === "recurring") {
+            deadline = getNextDeadline(cpoint.frequency);
+          } else {
+            deadline = new Date(subpoint.deadline);
+          }
+        }
+      });
+    });
+
+    if (!submission) {
+      if (new Date() > deadline) {
+        status = "overdue";
+      }
+    } else if (
+      !(submission.status === "submitted" || submission.status === "closed") &&
+      new Date() > deadline
+    ) {
+      status = "overdue";
+    }
+
+    return status;
+  };
+
   return {
     getUserDepartment,
     getDepartmentUserCount,
@@ -88,6 +143,8 @@ const usestoretools = (db: any) => {
     getRegBodyNameFromId,
     getSubCheckpointStatus,
     getlatestSopVersion,
+    getLatestSubmission,
+    getCheckpointStatus,
   };
 };
 

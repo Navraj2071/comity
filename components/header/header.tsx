@@ -26,19 +26,23 @@ import { useRouter } from "next/navigation";
 import useStore from "@/lib/store/useStore";
 import { BarLoader } from "react-spinners";
 import Checkpointview from "./checkpointview";
+import useapi from "../api/api";
+import { ClipLoader } from "react-spinners";
+import Notifications from "./notifications";
 
 export function Header() {
   const store = useStore();
   const user = store?.db?.user || {};
+  const api = useapi();
   const checkpoints = store?.db?.checkpoints || [];
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
-  const router = useRouter();
 
   const searchResults = checkpoints
     ? checkpoints.filter(
-        (checkpoint) =>
+        (checkpoint: any) =>
           checkpoint?.letterNumber
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
@@ -46,8 +50,13 @@ export function Header() {
       )
     : [];
 
-  const handleLogout = () => {
-    router.push("/login");
+  const handleLogout = async () => {
+    setLoading(true);
+    await api.logout();
+    try {
+      localStorage.clear();
+    } catch {}
+    setLoading(false);
   };
 
   if (!user) {
@@ -99,7 +108,7 @@ export function Header() {
               <div className="absolute top-full mt-1 right-0 w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
                 {searchResults.length > 0 ? (
                   <div className="p-2">
-                    {searchResults.map((result) => (
+                    {searchResults.map((result: any) => (
                       <div
                         key={result?._id}
                         className="p-2 hover:bg-gray-700 rounded cursor-pointer"
@@ -132,16 +141,7 @@ export function Header() {
             )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white relative h-8 w-8 p-0 rounded-full"
-          >
-            <Bell className="h-4 w-4" />
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-600 text-xs flex items-center justify-center p-0">
-              3
-            </Badge>
-          </Button>
+          <Notifications store={store} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -153,7 +153,7 @@ export function Header() {
                   <AvatarFallback className="bg-yellow-600/80 text-white text-xs">
                     {user?.name
                       ?.split(" ")
-                      .map((n) => n[0])
+                      .map((n: any) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
@@ -187,8 +187,14 @@ export function Header() {
                 className="text-red-400 hover:bg-gray-700 text-sm"
                 onClick={handleLogout}
               >
-                <LogOut className="mr-2 h-3.5 w-3.5" />
-                Sign out
+                {loading ? (
+                  <ClipLoader color="#fff" />
+                ) : (
+                  <>
+                    <LogOut className="mr-2 h-3.5 w-3.5" />
+                    Sign out
+                  </>
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
