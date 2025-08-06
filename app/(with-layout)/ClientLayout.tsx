@@ -19,7 +19,6 @@ export default function ClientLayout({
   const { loading, poppulateAllData, db } = useStore();
 
   useEffect(() => {
-    alert("poppulating data");
     poppulateAllData();
 
     return () => {
