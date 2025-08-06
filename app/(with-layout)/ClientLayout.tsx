@@ -16,9 +16,10 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, poppulateAllData } = useStore();
+  const { loading, poppulateAllData, db } = useStore();
 
   useEffect(() => {
+    alert("poppulating data");
     poppulateAllData();
 
     return () => {
@@ -29,7 +30,7 @@ export default function ClientLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-gray-900 text-white`}>
-        {loading ? (
+        {loading || !db.user ? (
           <div className="h-screen w-screen flex flex-col content-center items-center justify-center">
             <Image
               src={"/logo-comity.png"}
