@@ -1,4 +1,3 @@
-// src/lib/db.ts
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
@@ -14,31 +13,45 @@ if (!MONGODB_URI) {
  * in development. This prevents connections growing exponentially
  * during API Route usage.
  */
-let cached = global as typeof global & { mongoose: any };
+// let cached = global as typeof global & { mongoose: any };
 
-if (!cached.mongoose) {
-  cached.mongoose = { conn: null, promise: null };
-}
+// if (!cached.mongoose) {
+//   cached.mongoose = { conn: null, promise: null };
+// }
+
+// async function connectDB() {
+//   if (cached.mongoose.conn) {
+//     return cached.mongoose.conn;
+//   }
+
+//   if (!cached.mongoose.promise) {
+//     const opts = {
+//       bufferCommands: false,
+//     };
+
+//     cached.mongoose.promise = mongoose
+//       .connect(MONGODB_URI, opts)
+//       .then((mongoose) => {
+//         console.log("MongoDB Connected");
+//         return mongoose;
+//       });
+//   }
+//   cached.mongoose.conn = await cached.mongoose.promise;
+//   return cached.mongoose.conn;
+// }
 
 async function connectDB() {
-  if (cached.mongoose.conn) {
-    return cached.mongoose.conn;
-  }
+  const opts = {
+    bufferCommands: false,
+  };
 
-  if (!cached.mongoose.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.mongoose.promise = mongoose
-      .connect(MONGODB_URI, opts)
-      .then((mongoose) => {
-        console.log("MongoDB Connected");
-        return mongoose;
-      });
+  try {
+    const connection = await mongoose.connect(MONGODB_URI, opts);
+    return connection;
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    throw error;
   }
-  cached.mongoose.conn = await cached.mongoose.promise;
-  return cached.mongoose.conn;
 }
 
 export default connectDB;

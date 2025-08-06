@@ -36,7 +36,6 @@ const useStore = () => {
 
   const fetchDataFromAPI = async (table: string) => {
     fetchFunctions[table]()
-
       .then((res: any) => {
         setDb((prev: any) => {
           let newData = { ...prev };
@@ -45,10 +44,10 @@ const useStore = () => {
 
           return newData;
         });
-
-        localStorage.setItem(table, JSON.stringify(res?.user));
+        try {
+          localStorage.setItem(table, JSON.stringify(res[table]));
+        } catch {}
       })
-
       .catch((err: any) => console.log("Error fetching data: ", err));
   };
 
@@ -76,6 +75,7 @@ const useStore = () => {
         await fetchDataFromAPI(key);
       })
     );
+
     setloading(false);
   };
 

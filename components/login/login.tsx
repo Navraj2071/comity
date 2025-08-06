@@ -34,12 +34,7 @@ export default function LoginPage() {
     await api
       .login(formData.email, formData.password)
       .then((res) => {
-        try {
-          router.back();
-        } catch {
-          router.push("/");
-        }
-        router.refresh();
+        router.push("/");
       })
       .catch((err) => {
         console.log(err);
