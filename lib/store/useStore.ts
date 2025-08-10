@@ -70,11 +70,9 @@ const useStore = () => {
   const poppulateAllData = async () => {
     setloading(true);
 
-    await Promise.all(
-      Object.keys(fetchFunctions).map(async (key) => {
-        await fetchDataFromAPI(key);
-      })
-    );
+    Object.keys(fetchFunctions).map(async (key) => {
+      fetchDataFromAPI(key);
+    });
 
     setloading(false);
   };
