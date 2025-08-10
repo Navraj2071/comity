@@ -5,9 +5,14 @@ import connectDB from "@/lib/db";
 import User from "@/lib/models/user";
 import mongoose from "mongoose";
 
-async function getAuthenticatedUserId() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+async function getAuthenticatedUserId(req: Request) {
+  // const cookieStore = await cookies();
+  // const accessToken = cookieStore.get("accessToken")?.value;
+
+  const authHeader = req.headers.get("authorization");
+  const accessToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.substring(7) // remove "Bearer "
+    : null;
 
   if (!accessToken) {
     return { userId: null, error: "No access token provided" };
@@ -28,7 +33,7 @@ async function getAuthenticatedUserId() {
 export async function GET(request: Request) {
   await connectDB();
 
-  const { userId, error } = await getAuthenticatedUserId();
+  const { userId, error } = await getAuthenticatedUserId(request);
 
   if (error || !userId) {
     return NextResponse.json(
@@ -62,7 +67,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   await connectDB();
 
-  const { userId, error } = await getAuthenticatedUserId();
+  const { userId, error } = await getAuthenticatedUserId(request);
 
   if (error || !userId) {
     return NextResponse.json(
@@ -113,7 +118,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   await connectDB();
 
-  const { userId, error } = await getAuthenticatedUserId();
+  const { userId, error } = await getAuthenticatedUserId(request);
 
   if (error || !userId) {
     return NextResponse.json(

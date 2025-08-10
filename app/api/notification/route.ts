@@ -5,7 +5,7 @@ import Notification from "@/lib/models/notification";
 import { authenticateUser } from "@/lib/utilities";
 
 export async function GET(request: Request) {
-  const { user, message, error } = await authenticateUser();
+  const { user, message, error } = await authenticateUser(request);
 
   if (error || !user) {
     const response = NextResponse.json({ message }, { status: 401 });

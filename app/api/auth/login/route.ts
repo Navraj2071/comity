@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     await user.save();
 
     const response = NextResponse.json(
-      { message: "Login successful" },
+      { message: "Login successful", accessToken, refreshToken },
       { status: 200 }
     );
 

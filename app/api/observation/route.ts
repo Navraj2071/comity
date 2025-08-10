@@ -5,7 +5,7 @@ import Observation from "@/lib/models/observation";
 import { authenticateUser } from "@/lib/utilities";
 
 export async function GET(request: Request) {
-  const { user, message, error } = await authenticateUser();
+  const { user, message, error } = await authenticateUser(request);
 
   if (error || !user) {
     const response = NextResponse.json({ message }, { status: 401 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { user, message, error } = await authenticateUser();
+  const { user, message, error } = await authenticateUser(request);
 
   if (error || !user) {
     const response = NextResponse.json({ message }, { status: 401 });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const { user, message, error } = await authenticateUser();
+  const { user, message, error } = await authenticateUser(request);
 
   if (error || !user) {
     const response = NextResponse.json({ message }, { status: 401 });
@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { user, message, error } = await authenticateUser();
+  const { user, message, error } = await authenticateUser(request);
 
   if (error || !user) {
     const response = NextResponse.json({ message }, { status: 401 });

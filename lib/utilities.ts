@@ -55,7 +55,7 @@ export const tokenRefresh = async (oldRefreshToken: any) => {
   }
 };
 
-export const authenticateUser = async () => {
+export const authenticateUserWithCookies = async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const refreshToken = cookieStore.get("refreshToken")?.value;
@@ -78,6 +78,32 @@ export const authenticateUser = async () => {
           message = err;
         });
     }
+  } else {
+    await getUser(accessToken)
+      .then((res) => {
+        user = res;
+      })
+      .catch((err) => {
+        error = true;
+        message = err;
+      });
+  }
+
+  return { user, message, error };
+};
+export const authenticateUser = async (req: Request) => {
+  const authHeader = req.headers.get("authorization");
+  const accessToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.substring(7)
+    : null;
+
+  let user = null as any;
+  let message = "";
+  let error = false;
+
+  if (!accessToken) {
+    error = true;
+    message = "Token missing";
   } else {
     await getUser(accessToken)
       .then((res) => {

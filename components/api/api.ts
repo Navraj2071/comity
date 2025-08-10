@@ -16,7 +16,10 @@ const useapi = () => {
     });
 
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      return data;
     } else {
       const data = await response.json();
       throw data.message;
@@ -30,20 +33,29 @@ const useapi = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
+      localStorage.clear();
     } catch {}
 
     router.push("/login");
   };
 
   const crud = async (endpoint: string, method: string, data?: {}) => {
+    const accessToken = localStorage.getItem("accessToken");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(endpoint, {
       method: method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
+      headers: headers,
+      // credentials: "include",
       body: JSON.stringify(data),
     });
     if (response.status === 401) {
@@ -63,7 +75,7 @@ const useapi = () => {
     const res = await fetch("/api/upload", {
       method: "POST",
       body: formData,
-      credentials: "include",
+      // credentials: "include",
     });
 
     if (res.ok) {
