@@ -11,6 +11,7 @@ const useapi = () => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -29,6 +30,7 @@ const useapi = () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
       });
     } catch {}
 
@@ -41,6 +43,7 @@ const useapi = () => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(data),
     });
     if (response.status === 401) {
@@ -60,6 +63,7 @@ const useapi = () => {
     const res = await fetch("/api/upload", {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
 
     if (res.ok) {
