@@ -20,10 +20,6 @@ export default function ClientLayout({
 
   useEffect(() => {
     poppulateAllData();
-
-    return () => {
-      localStorage.clear();
-    };
   }, []);
 
   return (

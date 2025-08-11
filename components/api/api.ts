@@ -59,7 +59,8 @@ const useapi = () => {
       body: JSON.stringify(data),
     });
     if (response.status === 401) {
-      router.push("/login");
+      // router.push("/login");
+      window.location.replace("/login");
       throw 401;
     }
     if (response.ok) {

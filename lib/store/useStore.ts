@@ -35,27 +35,25 @@ const useStore = () => {
   } as any;
 
   const fetchDataFromAPI = async (table: string) => {
-    fetchFunctions[table]()
-      .then((res: any) => {
-        setDb((prev: any) => {
-          let newData = { ...prev };
+    return await fetchFunctions[table]().then((res: any) => {
+      setDb((prev: any) => {
+        let newData = { ...prev };
 
-          newData[table] = res[table];
+        newData[table] = res[table];
 
-          return newData;
-        });
-        try {
-          localStorage.setItem(table, JSON.stringify(res[table]));
-        } catch {}
-      })
-      .catch((err: any) => console.log("Error fetching data: ", err));
+        return newData;
+      });
+      try {
+        localStorage.setItem(table, JSON.stringify(res[table]));
+      } catch {}
+    });
   };
 
   const checkData = async (table: string) => {
     const data = localStorage.getItem(table);
 
     if (!data || data === "undefined") {
-      fetchDataFromAPI(table);
+      fetchDataFromAPI(table).catch((err) => {});
     } else {
       setDb((prev: any) => {
         let newData = { ...prev };
@@ -84,7 +82,7 @@ const useStore = () => {
   }, []);
 
   const update = (table: string) => {
-    fetchDataFromAPI(table);
+    fetchDataFromAPI(table).catch((err) => {});
   };
 
   const tools = usestoretools(db);
